@@ -4,6 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     image: document-service-docker
+    restart: unless-stopped
     container_name: document-service-api
     env_file:
       - .env
