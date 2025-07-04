@@ -47,6 +47,7 @@ public class LoginController : ControllerBase
 
     [HttpPost]
     [Route("revoke")]
+    [Authorize]
     public async Task<ActionResult<BaseResponse>> RevokeToken([FromBody] RevokeTokenRequestDTO request)
     {
         BaseResponse response = new BaseResponse(ResponseStatus.Fail);
