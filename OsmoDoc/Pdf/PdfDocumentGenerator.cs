@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace OsmoDoc.Pdf;
 
-public class PdfDocumentGenerator
+public static class PdfDocumentGenerator
 {
     /// <summary>
     /// Generates a PDF document from an HTML or EJS template.
