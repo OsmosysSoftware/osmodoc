@@ -6,7 +6,7 @@ public enum ImageSourceType
 {
     Base64 = 0,
     LocalFile = 1,
-    Url = 1
+    Url = 2
 }
 
 public class ImageData
