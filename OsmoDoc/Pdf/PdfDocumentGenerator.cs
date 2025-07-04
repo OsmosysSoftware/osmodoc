@@ -240,7 +240,7 @@ public static class PdfDocumentGenerator
             JToken.Parse(json);
             return true;
         }
-        catch (JsonReaderException)
+        catch (Exception)
         {
             return false;
         }
