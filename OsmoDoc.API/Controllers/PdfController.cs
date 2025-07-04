@@ -160,7 +160,7 @@ public class PdfController : ControllerBase
             string outputFilePath = Path.Combine(
                 this._hostingEnvironment.WebRootPath,
                 tempPath,
-                inputPath,
+                outputPath,
                 pdfPath,
                 CommonMethodsHelper.GenerateRandomFileName("pdf")
             );
