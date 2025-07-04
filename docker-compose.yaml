@@ -1,23 +1,32 @@
 services:
   redis:
     image: redis:7
-    container_name: redis
+    container_name: ${COMPOSE_PROJECT_NAME}-redis
     env_file:
       - .env
     ports:
       - ${REDIS_PORT}:6379
+    networks:
+      - osmodoc-net
 
-  osmodoc:
+  osmodoc-api:
     build:
       context: .
       dockerfile: Dockerfile
-    image: osmodoc-docker
-    container_name: osmodoc-api
+    container_name: ${COMPOSE_PROJECT_NAME}-api
     env_file:
       - .env
     ports:
-      - 5000:5000
+      - ${SERVER_PORT}:5000
     environment:
-      - ASPNETCORE_URLS=http://+:5000
-      - ASPNETCORE_ENVIRONMENT=Development
-      - BUILD_CONFIGURATION=Release
+      - REDIS_URL=${REDIS_HOST}:${REDIS_PORT}
+    depends_on:
+      - redis
+    volumes:
+      - ./Temp:/app/wwwroot/Temp
+    networks:
+      - osmodoc-net
+
+networks:
+  osmodoc-net:
+    driver: bridge
