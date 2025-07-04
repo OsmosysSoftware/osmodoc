@@ -81,6 +81,12 @@ public class WordController : ControllerBase
 
             CommonMethodsHelper.CreateDirectoryIfNotExists(outputFilePath);
 
+            // Validate images data
+            if (request.DocumentData.ImagesData.Any(img => string.IsNullOrEmpty(img.Data)) == true)
+            {
+                throw new BadHttpRequestException("Invalid image data: Image content is required");
+            }
+
             // Map document data in request to word library model class
             DocumentData documentData = new DocumentData
             {
@@ -92,7 +98,7 @@ public class WordController : ControllerBase
             // Generate and save output docx in output directory
             await WordDocumentGenerator.GenerateDocumentByTemplate(
                 docxTemplateFilePath,
-                documentData,
+                documentData,   
                 outputFilePath
             );
 
