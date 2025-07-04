@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
 
+namespace OsmoDoc.Word.Models;
+
 public enum ImageSourceType
 {
-    Base64,
-    LocalFile,
-    Url
+    Base64 = 0,
+    LocalFile = 1,
+    Url = 1
 }
 
 public class ImageData
@@ -18,6 +20,5 @@ public class ImageData
     [Required(ErrorMessage = "Image data is required")]
     public string Data { get; set; } = string.Empty; // Can be base64, file path, or URL
 
-    [Required(ErrorMessage = "Image extension is required")]
     public string? ImageExtension { get; set; } // Required for Base64
 }
