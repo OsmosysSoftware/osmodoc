@@ -37,6 +37,11 @@ public static class WordDocumentGenerator
             throw new ArgumentNullException(nameof(templateFilePath));
         }
 
+        if (documentData == null)
+        {
+            throw new ArgumentNullException(nameof(documentData));
+        }
+
         if (string.IsNullOrWhiteSpace(outputFilePath))
         {
             throw new ArgumentNullException(nameof(outputFilePath));
