@@ -27,7 +27,14 @@ builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttri
 // Load .env file
 string root = Directory.GetCurrentDirectory();
 string dotenv = Path.GetFullPath(Path.Combine(root, "..", ".env"));
-OsmoDoc.API.DotEnv.Load(dotenv);
+if (File.Exists(dotenv))
+{
+    OsmoDoc.API.DotEnv.Load(dotenv);
+}
+else
+{
+    throw new FileNotFoundException($".env file not found at path: {dotenv}");
+}
 
 // Initialize PDF tool path once at startup
 OsmoDocPdfConfig.WkhtmltopdfPath = Path.Combine(
