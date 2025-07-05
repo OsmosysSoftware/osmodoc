@@ -266,7 +266,7 @@ public static class WordDocumentGenerator
     /// </summary>
     /// <param name="documentPath">The ile path where the updated document will be saved.</param>
     /// <param name="images">The data structure for holding the images details.</param>
-    
+
     private static async Task ProcessImagePlaceholders(
         string documentPath,
         List<ImageData> images)
@@ -358,7 +358,7 @@ public static class WordDocumentGenerator
     private static async Task<string> PrepareImageFile(ImageData imageData)
     {
         string tempFilePath = System.IO.Path.GetTempFileName();
-        
+
         if (!string.IsNullOrEmpty(imageData.ImageExtension))
         {
             tempFilePath = System.IO.Path.ChangeExtension(tempFilePath, imageData.ImageExtension);
@@ -368,10 +368,10 @@ public static class WordDocumentGenerator
         {
             case ImageSourceType.Base64:
                 await File.WriteAllBytesAsync(
-                    tempFilePath, 
+                    tempFilePath,
                     Convert.FromBase64String(imageData.Data));
                 break;
-                
+
             case ImageSourceType.LocalFile:
                 if (!File.Exists(imageData.Data))
                 {
@@ -380,7 +380,7 @@ public static class WordDocumentGenerator
 
                 File.Copy(imageData.Data, tempFilePath, true);
                 break;
-                
+
             case ImageSourceType.Url:
                 using (HttpClient httpClient = new HttpClient())
                 {
@@ -388,7 +388,7 @@ public static class WordDocumentGenerator
                     await File.WriteAllBytesAsync(tempFilePath, bytes);
                 }
                 break;
-                
+
             default:
                 throw new ArgumentOutOfRangeException();
         }

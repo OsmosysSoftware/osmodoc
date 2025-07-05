@@ -32,7 +32,7 @@ public class ModelValidationBadRequest
         {
             Message = firstError ?? "Validation failed"
         };
-        
+
         return new BadRequestObjectResult(response);
     }
 }

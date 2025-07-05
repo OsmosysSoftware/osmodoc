@@ -34,7 +34,7 @@ public class PdfController : ControllerBase
             {
                 throw new BadHttpRequestException("Request body cannot be null");
             }
-            
+
             string tempPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:TEMP").Value
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:TEMP is missing.");
             string inputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:INPUT").Value
@@ -136,7 +136,7 @@ public class PdfController : ControllerBase
             {
                 throw new BadHttpRequestException("Request body cannot be null");
             }
-            
+
             string tempPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:TEMP").Value
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:TEMP is missing.");
             string inputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:INPUT").Value
