@@ -47,34 +47,38 @@ public static class PdfDocumentGenerator
             throw new Exception("The file path you provided is not valid.");
         }
 
-        if (isEjsTemplate)
+        string? ejsConvertedHtmlPath = null;
+        string? tempModifiedHtmlDirectory = null;
+
+        try
         {
-            // Validate if template in file path is an ejs file
-            if (Path.GetExtension(templatePath).ToLower() != ".ejs")
+            if (isEjsTemplate)
             {
-                throw new Exception("Input template should be a valid EJS file");
+                // Validate if template in file path is an ejs file
+                if (Path.GetExtension(templatePath).ToLower() != ".ejs")
+                {
+                    throw new Exception("Input template should be a valid EJS file");
+                }
+
+                // Convert ejs file to an equivalent html
+                ejsConvertedHtmlPath = await ConvertEjsToHTML(templatePath, outputFilePath, serializedEjsDataJson);
+                templatePath = ejsConvertedHtmlPath;
             }
 
-            // Convert ejs file to an equivalent html
-            templatePath = await ConvertEjsToHTML(templatePath, outputFilePath, serializedEjsDataJson);
+            // Modify html template with content data and generate pdf
+            (string modifiedHtmlFilePath, string tempDirectory) = ReplaceFileElementsWithMetaData(templatePath, metaDataList, outputFilePath);
+            tempModifiedHtmlDirectory = tempDirectory;
+
+            await ConvertHtmlToPdf(OsmoDocPdfConfig.WkhtmltopdfPath, modifiedHtmlFilePath, outputFilePath);
         }
-
-        // Modify html template with content data and generate pdf
-        string modifiedHtmlFilePath = ReplaceFileElementsWithMetaData(templatePath, metaDataList, outputFilePath);
-        await ConvertHtmlToPdf(OsmoDocPdfConfig.WkhtmltopdfPath, modifiedHtmlFilePath, outputFilePath);
-
-        if (isEjsTemplate)
+        finally
         {
-            // If input template was an ejs file, then the template path contains path to html converted from ejs
-            if (File.Exists(templatePath) && Path.GetExtension(templatePath).ToLower() == ".html")
-            {
-                // If template path contains path to converted html template then delete it
-                File.Delete(templatePath);
-            }
+            // Cleanup temporary directories and files
+            CleanupTemporaryResources(ejsConvertedHtmlPath, tempModifiedHtmlDirectory);
         }
     }
 
-    private static string ReplaceFileElementsWithMetaData(string templatePath, List<ContentMetaData> metaDataList, string outputFilePath)
+    private static (string modifiedHtmlFilePath, string tempDirectory) ReplaceFileElementsWithMetaData(string templatePath, List<ContentMetaData> metaDataList, string outputFilePath)
     {
         string htmlContent = File.ReadAllText(templatePath);
 
@@ -98,7 +102,7 @@ public static class PdfDocumentGenerator
         }
 
         File.WriteAllText(tempHtmlFile, htmlContent);
-        return tempHtmlFile;
+        return (tempHtmlFile, tempHtmlFilePath);
     }
 
     private async static Task ConvertHtmlToPdf(string? wkhtmltopdfPath, string modifiedHtmlFilePath, string outputFilePath)
@@ -154,12 +158,6 @@ public static class PdfDocumentGenerator
             {
                 throw new Exception($"Error during PDF generation: {errors} (Exit Code: {process.ExitCode})");
             }
-        }
-
-        // Delete the temporary modified HTML file
-        if (File.Exists(modifiedHtmlFilePath))
-        {
-            File.Delete(modifiedHtmlFilePath);
         }
     }
 
@@ -224,12 +222,6 @@ public static class PdfDocumentGenerator
             }
         }
 
-        // Delete json data file
-        if (File.Exists(ejsDataJsonFilePath))
-        {
-            File.Delete(ejsDataJsonFilePath);
-        }
-
         return tempHtmlFilePath;
     }
 
@@ -259,6 +251,37 @@ public static class PdfDocumentGenerator
         else
         {
             throw new Exception("Unknown operating system");
+        }
+    }
+
+    private static void CleanupTemporaryResources(string? ejsConvertedHtmlPath, string? tempModifiedHtmlDirectory)
+    {
+        // Clean up EJS converted HTML file
+        if (!string.IsNullOrEmpty(ejsConvertedHtmlPath) && File.Exists(ejsConvertedHtmlPath))
+        {
+            try
+            {
+                File.Delete(ejsConvertedHtmlPath);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception but don't throw to avoid masking original exceptions
+                Console.WriteLine($"Warning: Could not delete EJS converted HTML file {ejsConvertedHtmlPath}: {ex.Message}");
+            }
+        }
+
+        // Clean up temporary modified HTML directory and its contents
+        if (!string.IsNullOrEmpty(tempModifiedHtmlDirectory) && Directory.Exists(tempModifiedHtmlDirectory))
+        {
+            try
+            {
+                Directory.Delete(tempModifiedHtmlDirectory, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception but don't throw to avoid masking original exceptions
+                Console.WriteLine($"Warning: Could not delete temporary directory {tempModifiedHtmlDirectory}: {ex.Message}");
+            }
         }
     }
 }
