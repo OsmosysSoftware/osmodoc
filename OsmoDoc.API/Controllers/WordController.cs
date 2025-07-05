@@ -31,6 +31,8 @@ public class WordController : ControllerBase
     public async Task<ActionResult<BaseResponse>> GenerateWord(WordGenerationRequestDTO request)
     {
         BaseResponse response = new BaseResponse(ResponseStatus.Fail);
+        string? docxTemplateFilePath = null;
+        string? outputFilePath = null;
 
         try
         {
@@ -57,7 +59,7 @@ public class WordController : ControllerBase
 
 
             // Generate filepath to save base64 docx template
-            string docxTemplateFilePath = Path.Combine(
+            docxTemplateFilePath = Path.Combine(
                 this._hostingEnvironment.WebRootPath,
                 tempPath,
                 inputPath,
@@ -71,7 +73,7 @@ public class WordController : ControllerBase
             await Base64StringHelper.SaveBase64StringToFilePath(request.Base64, docxTemplateFilePath, this._configuration);
 
             // Initialize output filepath
-            string outputFilePath = Path.Combine(
+            outputFilePath = Path.Combine(
                 this._hostingEnvironment.WebRootPath,
                 tempPath,
                 outputPath,
@@ -142,6 +144,31 @@ public class WordController : ControllerBase
             this._logger.LogError(ex.Message);
             this._logger.LogError(ex.StackTrace);
             return this.StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
+        finally
+        {
+            if (docxTemplateFilePath != null && System.IO.File.Exists(docxTemplateFilePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(docxTemplateFilePath);
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError($"Error in deleting file at path {docxTemplateFilePath}: {ex.Message}");
+                }
+            }
+            if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(outputFilePath);
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                }
+            }
         }
     }
 }
