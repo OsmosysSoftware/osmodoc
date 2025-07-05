@@ -27,6 +27,8 @@ public class PdfController : ControllerBase
     public async Task<ActionResult<BaseResponse>> GeneratePdf(PdfGenerationRequestDTO request)
     {
         BaseResponse response = new BaseResponse(ResponseStatus.Fail);
+        string? htmlTemplateFilePath = null;
+        string? outputFilePath = null;
 
         try
         {
@@ -48,7 +50,7 @@ public class PdfController : ControllerBase
 
 
             // Generate filepath to save base64 html template
-            string htmlTemplateFilePath = Path.Combine(
+            htmlTemplateFilePath = Path.Combine(
                 this._hostingEnvironment.WebRootPath,
                 tempPath,
                 inputPath,
@@ -61,7 +63,7 @@ public class PdfController : ControllerBase
             // Save base64 html template to inputs directory
             await Base64StringHelper.SaveBase64StringToFilePath(request.Base64, htmlTemplateFilePath, this._configuration);
 
-            string outputFilePath = Path.Combine(
+            outputFilePath = Path.Combine(
                 this._hostingEnvironment.WebRootPath,
                 tempPath,
                 outputPath,
@@ -121,6 +123,31 @@ public class PdfController : ControllerBase
             this._logger.LogError(ex.StackTrace);
             return this.StatusCode(StatusCodes.Status500InternalServerError, response);
         }
+        finally
+        {
+            if (htmlTemplateFilePath != null && System.IO.File.Exists(htmlTemplateFilePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(htmlTemplateFilePath);
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError($"Error in deleting file at path {htmlTemplateFilePath}: {ex.Message}");
+                }
+            }
+            if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(outputFilePath);
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                }
+            }
+        }
     }
 
     [HttpPost]
@@ -129,6 +156,8 @@ public class PdfController : ControllerBase
     public async Task<ActionResult<BaseResponse>> GeneratePdfUsingEjs(PdfGenerationRequestDTO request)
     {
         BaseResponse response = new BaseResponse(ResponseStatus.Fail);
+        string? ejsTemplateFilePath = null;
+        string? outputFilePath = null;
 
         try
         {
@@ -149,7 +178,7 @@ public class PdfController : ControllerBase
                              ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:PDF is missing.");
 
             // Generate filepath to save base64 html template
-            string ejsTemplateFilePath = Path.Combine(
+            ejsTemplateFilePath = Path.Combine(
                 this._hostingEnvironment.WebRootPath,
                 tempPath,
                 inputPath,
@@ -162,7 +191,7 @@ public class PdfController : ControllerBase
             // Save base64 html template to inputs directory
             await Base64StringHelper.SaveBase64StringToFilePath(request.Base64, ejsTemplateFilePath, this._configuration);
 
-            string outputFilePath = Path.Combine(
+            outputFilePath = Path.Combine(
                 this._hostingEnvironment.WebRootPath,
                 tempPath,
                 outputPath,
@@ -221,6 +250,31 @@ public class PdfController : ControllerBase
             this._logger.LogError(ex.Message);
             this._logger.LogError(ex.StackTrace);
             return this.StatusCode(StatusCodes.Status500InternalServerError, response);
+        }
+        finally
+        {
+            if (ejsTemplateFilePath != null && System.IO.File.Exists(ejsTemplateFilePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(ejsTemplateFilePath);
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError($"Error in deleting file at path {ejsTemplateFilePath}: {ex.Message}");
+                }
+            }
+            if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
+            {
+                try
+                {
+                    System.IO.File.Delete(outputFilePath);
+                }
+                catch (Exception ex)
+                {
+                    this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                }
+            }
         }
     }
 }
