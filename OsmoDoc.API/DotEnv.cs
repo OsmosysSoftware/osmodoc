@@ -2,13 +2,27 @@
 
 public static class DotEnv
 {
-    public static void Load(string filePath)
+    public static void LoadEnvFile(string fileName = ".env")
     {
-        if (!File.Exists(filePath))
+        DirectoryInfo? dir = new DirectoryInfo(Directory.GetCurrentDirectory());
+
+        while (dir != null)
         {
-            return;
+            string envPath = Path.Combine(dir.FullName, fileName);
+            if (File.Exists(envPath))
+            {
+                Load(envPath);
+                return;
+            }
+
+            dir = dir.Parent;
         }
 
+        throw new FileNotFoundException($"{fileName} file not found");
+    }
+    
+    public static void Load(string filePath)
+    {
         foreach (string line in File.ReadAllLines(filePath))
         {
             // Check if the line contains '='
@@ -31,5 +45,4 @@ public static class DotEnv
             Environment.SetEnvironmentVariable(key, value);
         }
     }
-
 }

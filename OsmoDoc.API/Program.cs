@@ -13,6 +13,7 @@ using StackExchange.Redis;
 using OsmoDoc.API.Models;
 using OsmoDoc.Services;
 using System.IdentityModel.Tokens.Jwt;
+using System.Runtime.InteropServices;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -25,22 +26,16 @@ builder.Services.AddControllers(options => options.Filters.Add(new ProducesAttri
     });
 
 // Load .env file
-string root = Directory.GetCurrentDirectory();
-string dotenv = Path.GetFullPath(Path.Combine(root, "..", ".env"));
-if (File.Exists(dotenv))
-{
-    OsmoDoc.API.DotEnv.Load(dotenv);
-}
-else
-{
-    throw new FileNotFoundException($".env file not found at path: {dotenv}");
-}
+OsmoDoc.API.DotEnv.LoadEnvFile();
 
-// Initialize PDF tool path once at startup
-OsmoDocPdfConfig.WkhtmltopdfPath = Path.Combine(
-    builder.Environment.WebRootPath,
-    builder.Configuration.GetSection("STATIC_FILE_PATHS:HTML_TO_PDF_TOOL").Value!
-);
+// Initialize PDF tool path once at startup (on Windows)
+if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+{
+    OsmoDocPdfConfig.WkhtmltopdfPath = Path.Combine(
+        builder.Environment.WebRootPath,
+        builder.Configuration.GetSection("STATIC_FILE_PATHS:HTML_TO_PDF_TOOL").Value!
+    );
+}
 
 // Register REDIS service
 builder.Services.AddSingleton<IConnectionMultiplexer>(
