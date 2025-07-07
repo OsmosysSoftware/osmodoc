@@ -411,21 +411,39 @@ public static class WordDocumentGenerator
     {
         string tempFilePath = IOPath.GetTempFileName();
 
+        // Determine image extension
+        string extension = ".jpg"; // Default fallback
+
         if (!string.IsNullOrEmpty(imageData.ImageExtension))
         {
-            // Define allowed image extensions
-            string[] allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg" };
-            string extension = imageData.ImageExtension.StartsWith(".")
+            extension = imageData.ImageExtension.StartsWith(".")
                 ? imageData.ImageExtension
                 : "." + imageData.ImageExtension;
-
-            if (!allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
-            {
-                throw new ArgumentException($"Invalid image extension: {imageData.ImageExtension}");
-            }
-
-            tempFilePath = IOPath.ChangeExtension(tempFilePath, extension);
         }
+        else if (imageData.SourceType == ImageSourceType.LocalFile || imageData.SourceType == ImageSourceType.Url)
+        {
+            try
+            {
+                extension = System.IO.Path.GetExtension(imageData.Data);
+                if (string.IsNullOrEmpty(extension))
+                {
+                    extension = ".jpg"; // fallback if no extension in path/URL
+                }
+            }
+            catch
+            {
+                extension = ".jpg"; // safe fallback on exception
+            }
+        }
+
+        // Define allowed image extensions
+        string[] allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg" };
+        if (!allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException($"Invalid image extension: {imageData.ImageExtension}");
+        }
+
+        tempFilePath = IOPath.ChangeExtension(tempFilePath, extension);
 
         switch (imageData.SourceType)
         {
