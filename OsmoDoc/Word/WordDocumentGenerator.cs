@@ -3,17 +3,22 @@ using DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
 using OsmoDoc.Word.Models;
-using NPOI.XWPF.UserModel;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
-using IOPath = System.IO.Path;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Net.Http;
-using System.Diagnostics;
+using IOPath = System.IO.Path;
+using Paragraph = DocumentFormat.OpenXml.Wordprocessing.Paragraph;
+using Run = DocumentFormat.OpenXml.Wordprocessing.Run;
+using Table = DocumentFormat.OpenXml.Wordprocessing.Table;
+using TableCell = DocumentFormat.OpenXml.Wordprocessing.TableCell;
+using TableCellProperties = DocumentFormat.OpenXml.Wordprocessing.TableCellProperties;
+using TableRow = DocumentFormat.OpenXml.Wordprocessing.TableRow;
+using Text = DocumentFormat.OpenXml.Wordprocessing.Text;
 
 namespace OsmoDoc.Word;
 
@@ -22,7 +27,7 @@ namespace OsmoDoc.Word;
 /// </summary>
 public static class WordDocumentGenerator
 {
-    private const string PlaceholderPattern = @"{[a-zA-Z]+}";
+    private const string PlaceholderPattern = @"{[a-zA-Z][a-zA-Z0-9_-]*}";
 
     /// <summary>
     /// Generates a Word document based on a template, replaces placeholders with data, and saves it to the specified output file path.
@@ -47,229 +52,265 @@ public static class WordDocumentGenerator
             throw new ArgumentNullException(nameof(outputFilePath));
         }
 
-        List<ContentData> contentData = documentData.Placeholders;
-        List<TableData> tablesData = documentData.TablesData;
+        // Copy template to output location
+        File.Copy(templateFilePath, outputFilePath, true);
 
-        // Creating dictionaries for each type of placeholders
-        Dictionary<string, string> textPlaceholders = new Dictionary<string, string>();
-        Dictionary<string, string> tableContentPlaceholders = new Dictionary<string, string>();
-        Dictionary<string, string> imagePlaceholders = new Dictionary<string, string>();
-
-        foreach (ContentData content in contentData)
+        using (WordprocessingDocument document = WordprocessingDocument.Open(outputFilePath, true))
         {
-            if (content.ParentBody == ParentBody.None && content.ContentType == ContentType.Text)
+            if (document.MainDocumentPart == null)
             {
-                string placeholder = "{" + content.Placeholder + "}";
-                textPlaceholders.TryAdd(placeholder, content.Content);
+                throw new InvalidOperationException("Document does not contain a main document part.");
             }
-            else if (content.ParentBody == ParentBody.Table && content.ContentType == ContentType.Text)
-            {
-                string placeholder = "{" + content.Placeholder + "}";
-                tableContentPlaceholders.TryAdd(placeholder, content.Content);
-            }
+
+            // Create dictionaries for each type of placeholders
+            Dictionary<string, string> textPlaceholders = documentData.Placeholders
+                .Where(content => content.ParentBody == ParentBody.None && content.ContentType == ContentType.Text)
+                .ToDictionary(content => "{" + content.Placeholder + "}", content => content.Content);
+
+            Dictionary<string, string> tableContentPlaceholders = documentData.Placeholders
+                .Where(content => content.ParentBody == ParentBody.Table && content.ContentType == ContentType.Text)
+                .ToDictionary(content => "{" + content.Placeholder + "}", content => content.Content);
+
+            // Replace text placeholders in main document
+            ReplaceTextPlaceholders(document.MainDocumentPart.Document, textPlaceholders);
+
+            // Replace table placeholders and populate tables
+            ProcessTables(document.MainDocumentPart.Document, tableContentPlaceholders, documentData.TablesData);
+
+            // Process images
+            await ProcessImagePlaceholders(document, documentData.Images);
+
+            // Save the document
+            document.Save();
+        }
+    }
+
+    /// <summary>
+    /// Replaces text placeholders in the document.
+    /// </summary>
+    /// <param name="document">The document to process.</param>
+    /// <param name="textPlaceholders">Dictionary of placeholders and their replacement values.</param>
+    private static void ReplaceTextPlaceholders(Document document, Dictionary<string, string> textPlaceholders)
+    {
+        if (textPlaceholders.Count == 0)
+        {
+            return;
         }
 
-        // Create document of the template
-        XWPFDocument document = await GetXWPFDocument(templateFilePath);
-
-        // For each element in the document
-        foreach (IBodyElement element in document.BodyElements)
+        // Process all paragraphs in the document
+        List<Paragraph> paragraphs = document.Descendants<Paragraph>().ToList();
+        
+        foreach (Paragraph paragraph in paragraphs)
         {
-            if (element.ElementType == BodyElementType.PARAGRAPH)
+            // Get paragraph text to check for placeholders
+            string paragraphText = GetParagraphText(paragraph);
+            
+            if (string.IsNullOrEmpty(paragraphText) || !Regex.IsMatch(paragraphText, PlaceholderPattern))
             {
-                // If element is a paragraph
-                XWPFParagraph paragraph = (XWPFParagraph)element;
-
-                // If the paragraph is empty string or the placeholder regex does not match then continue
-                if (paragraph.ParagraphText == string.Empty || !new Regex(PlaceholderPattern).IsMatch(paragraph.ParagraphText))
-                {
-                    continue;
-                }
-
-                // Replace placeholders in paragraph with values
-                paragraph = ReplacePlaceholdersOnBody(paragraph, textPlaceholders);
+                continue;
             }
-            else if (element.ElementType == BodyElementType.TABLE)
+
+            // Replace placeholders in this paragraph
+            ReplacePlaceholdersInParagraph(paragraph, textPlaceholders);
+        }
+    }
+
+    /// <summary>
+    /// Gets the text content of a paragraph.
+    /// </summary>
+    /// <param name="paragraph">The paragraph to get text from.</param>
+    /// <returns>The text content of the paragraph.</returns>
+    private static string GetParagraphText(Paragraph paragraph)
+    {
+        return string.Join("", paragraph.Descendants<Text>().Select(t => t.Text));
+    }
+
+    /// <summary>
+    /// Replaces placeholders in a specific paragraph.
+    /// </summary>
+    /// <param name="paragraph">The paragraph to process.</param>
+    /// <param name="placeholders">Dictionary of placeholders and their replacement values.</param>
+    private static void ReplacePlaceholdersInParagraph(Paragraph paragraph, Dictionary<string, string> placeholders)
+    {
+        if (placeholders.Count == 0)
+        {
+            return;
+        }
+
+        // Get all text elements from the paragraph
+        List<Text> textElements = paragraph.Descendants<Text>().ToList();
+        if (textElements.Count == 0)
+        {
+            return;
+        }
+
+        // Concatenate all text to get the full paragraph content
+        string fullText = string.Join("", textElements.Select(t => t.Text));
+        
+        // Check if any placeholders exist in the full text
+        bool hasPlaceholders = placeholders.Keys.Any(placeholder => fullText.Contains(placeholder));
+        if (!hasPlaceholders)
+        {
+            return;
+        }
+
+        // Replace placeholders in the full text
+        string replacedText = fullText;
+        foreach (KeyValuePair<string, string> placeholder in placeholders)
+        {
+            replacedText = replacedText.Replace(placeholder.Key, placeholder.Value);
+        }
+
+        // If no changes were made, return
+        if (replacedText == fullText)
+        {
+            return;
+        }
+
+        // Clear existing text elements and create a single new one
+        // This preserves the paragraph structure while ensuring text continuity
+        foreach (Text textElement in textElements)
+        {
+            textElement.Text = "";
+        }
+
+        // Use the first text element to hold all the replaced content
+        if (textElements.Count > 0)
+        {
+            textElements[0].Text = replacedText;
+        }
+    }
+
+    /// <summary>
+    /// Processes tables for placeholder replacement and data population.
+    /// </summary>
+    /// <param name="document">The document containing tables.</param>
+    /// <param name="tableContentPlaceholders">Dictionary of table placeholders and their replacement values.</param>
+    /// <param name="tablesData">List of table data to populate.</param>
+    private static void ProcessTables(Document document, Dictionary<string, string> tableContentPlaceholders, List<TableData> tablesData)
+    {
+        List<Table> tables = document.Descendants<Table>().ToList();
+
+        foreach (Table table in tables)
+        {
+            // Replace placeholders in table cells
+            ReplaceTablePlaceholders(table, tableContentPlaceholders);
+
+            // Populate table with data if applicable
+            int tableIndex = tables.IndexOf(table);
+            TableData? tableData = tablesData.FirstOrDefault(td => td.TablePos == tableIndex + 1);
+
+            if (tableData != null)
             {
-                // If element is a table
-                XWPFTable table = (XWPFTable)element;
+                PopulateTable(table, tableData);
+            }
+        }
+    }
 
-                // Replace placeholders in a table
-                table = ReplacePlaceholderOnTables(table, tableContentPlaceholders);
+    /// <summary>
+    /// Replaces placeholders in table cells.
+    /// </summary>
+    /// <param name="table">The table to process.</param>
+    /// <param name="tableContentPlaceholders">Dictionary of placeholders and their replacement values.</param>
+    private static void ReplaceTablePlaceholders(Table table, Dictionary<string, string> tableContentPlaceholders)
+    {
+        if (tableContentPlaceholders.Count == 0)
+        {
+            return;
+        }
 
-                // Populate the table with data if it is passed in tablesData list
-                foreach (TableData insertData in tablesData)
+        List<TableRow> tableRows = table.Elements<TableRow>().ToList();
+        
+        foreach (TableRow row in tableRows)
+        {
+            List<TableCell> cells = row.Elements<TableCell>().ToList();
+            
+            foreach (TableCell cell in cells)
+            {
+                List<Paragraph> paragraphs = cell.Elements<Paragraph>().ToList();
+                
+                foreach (Paragraph paragraph in paragraphs)
                 {
-                    if (insertData.TablePos >= 1 && insertData.TablePos <= document.Tables.Count && table == document.Tables[insertData.TablePos - 1])
+                    string paragraphText = GetParagraphText(paragraph);
+                    
+                    if (string.IsNullOrEmpty(paragraphText) || !Regex.IsMatch(paragraphText, PlaceholderPattern))
                     {
-                        table = PopulateTable(table, insertData);
+                        continue;
                     }
+
+                    ReplacePlaceholdersInParagraph(paragraph, tableContentPlaceholders);
                 }
             }
         }
-
-        // Write the document to output file path and close the document
-        WriteDocument(document, outputFilePath);
-        document.Close();
-
-        /*
-            * Image Replacement is done after writing the document here,
-            * because for Text Replacement, NPOI package is being used
-            * and for Image Replacement, OpeXML package is used.
-            * Since both the packages have different execution method, so they are handled separately
-            */
-        // Replace all the image placeholders in the output file
-        await ProcessImagePlaceholders(outputFilePath, documentData.Images);
     }
 
     /// <summary>
-    /// Retrieves an instance of XWPFDocument from the specified document file path.
+    /// Populates a table with data rows.
     /// </summary>
-    /// <param name="docFilePath">The file path of the Word document.</param>
-    /// <returns>An instance of XWPFDocument representing the Word document.</returns>
-    private async static Task<XWPFDocument> GetXWPFDocument(string docFilePath)
+    /// <param name="table">The table to populate.</param>
+    /// <param name="tableData">The data to populate the table with.</param>
+    private static void PopulateTable(Table table, TableData tableData)
     {
-        byte[] fileBytes = await File.ReadAllBytesAsync(docFilePath);
-        using MemoryStream memoryStream = new MemoryStream(fileBytes);
-        return new XWPFDocument(memoryStream);
-    }
-
-    /// <summary>
-    /// Writes the XWPFDocument to the specified file path.
-    /// </summary>
-    /// <param name="document">The XWPFDocument to write.</param>
-    /// <param name="filePath">The file path to save the document.</param>
-    private static void WriteDocument(XWPFDocument document, string filePath)
-    {
-        string? directory = IOPath.GetDirectoryName(filePath);
-        if (!string.IsNullOrWhiteSpace(directory))
+        TableRow? headerRow = table.Elements<TableRow>().FirstOrDefault();
+        if (headerRow == null)
         {
-            Directory.CreateDirectory(directory);
+            return;
         }
 
-        using (FileStream writeStream = File.Create(filePath))
+        List<TableCell> headerCells = headerRow.Elements<TableCell>().ToList();
+        if (headerCells.Count == 0)
         {
-            document.Write(writeStream);
+            return;
         }
-    }
 
-    /// <summary>
-    /// Replaces the text placeholders in a paragraph with the specified values.
-    /// </summary>
-    /// <param name="paragraph">The XWPFParagraph containing the placeholders.</param>
-    /// <param name="textPlaceholders">The dictionary of text placeholders and their corresponding values.</param>
-    /// <returns>The updated XWPFParagraph.</returns>
-    private static XWPFParagraph ReplacePlaceholdersOnBody(XWPFParagraph paragraph, Dictionary<string, string> textPlaceholders)
-    {
-        // Get a list of all placeholders in the current paragraph
-        List<string> placeholdersTobeReplaced = Regex.Matches(paragraph.ParagraphText, PlaceholderPattern)
-                                                                 .Cast<Match>()
-                                                                 .Select(s => s.Groups[0].Value).ToList();
-
-        // For each placeholder in paragraph
-        foreach (string placeholder in placeholdersTobeReplaced)
+        // Get column headers
+        List<string> columnHeaders = headerCells.Select(cell => 
         {
-            // Replace text placeholders in paragraph with values
-            if (textPlaceholders.ContainsKey(placeholder))
+            Paragraph? firstParagraph = cell.Elements<Paragraph>().FirstOrDefault();
+            if (firstParagraph != null)
             {
-                paragraph.ReplaceText(placeholder, textPlaceholders[placeholder]);
+                return string.Join("", firstParagraph.Descendants<Text>().Select(t => t.Text));
             }
+            return "";
+        }).ToList();
 
-            paragraph.SpacingAfter = 0;
-        }
-
-        return paragraph;
-    }
-
-    /// <summary>
-    /// Replaces the text placeholders in a table with the specified values.
-    /// </summary>
-    /// <param name="table">The XWPFTable containing the placeholders.</param>
-    /// <param name="tableContentPlaceholders">The dictionary of table content placeholders and their corresponding values.</param>
-    /// <returns>The updated XWPFTable.</returns>
-    private static XWPFTable ReplacePlaceholderOnTables(XWPFTable table, Dictionary<string, string> tableContentPlaceholders)
-    {
-        // Loop through each cell of the table
-        foreach (XWPFTableRow row in table.Rows)
-        {
-            foreach (XWPFTableCell cell in row.GetTableCells())
-            {
-                foreach (XWPFParagraph paragraph in cell.Paragraphs)
-                {
-                    // Get a list of all placeholders in the current cell
-                    List<string> placeholdersTobeReplaced = Regex.Matches(paragraph.ParagraphText, PlaceholderPattern)
-                                                             .Cast<Match>()
-                                                             .Select(s => s.Groups[0].Value).ToList();
-
-                    // For each placeholder in the cell
-                    foreach (string placeholder in placeholdersTobeReplaced)
-                    {
-                        // replace the placeholder with its value
-                        if (tableContentPlaceholders.ContainsKey(placeholder))
-                        {
-                            paragraph.ReplaceText(placeholder, tableContentPlaceholders[placeholder]);
-                        }
-                    }
-                }
-            }
-        }
-
-        return table;
-    }
-
-    /// <summary>
-    /// Populates a table with the specified data.
-    /// </summary>
-    /// <param name="table">The XWPFTable to populate.</param>
-    /// <param name="tableData">The data to populate the table.</param>
-    /// <returns>The updated XWPFTable.</returns>
-    private static XWPFTable PopulateTable(XWPFTable table, TableData tableData)
-    {
-        // Get the header row
-        XWPFTableRow headerRow = table.GetRow(0);
-
-        // Return if no header row found or if it does not have any column
-        if (headerRow == null || headerRow.GetTableCells() == null || headerRow.GetTableCells().Count <= 0)
-        {
-            return table;
-        }
-
-        // For each row's data stored in table data
+        // Add data rows
         foreach (Dictionary<string, string> rowData in tableData.Data)
         {
-            XWPFTableRow row = table.CreateRow(); // This is a DATA row, not header
+            TableRow newRow = new TableRow();
 
-            int columnCount = headerRow.GetTableCells().Count; // Read from header
-            for (int cellNumber = 0; cellNumber < columnCount; cellNumber++)
+            for (int i = 0; i < columnHeaders.Count; i++)
             {
-                // Ensure THIS data row has enough cells
-                while (row.GetTableCells().Count <= cellNumber)
+                string cellValue = rowData.ContainsKey(columnHeaders[i]) ? rowData[columnHeaders[i]] : "";
+
+                TableCell cell = new TableCell(
+                    new Paragraph(
+                        new Run(
+                            new Text(cellValue))));
+
+                // Copy formatting from header cell if available
+                if (i < headerCells.Count)
                 {
-                    row.AddNewTableCell();
+                    TableCellProperties? headerProps = headerCells[i].TableCellProperties;
+                    if (headerProps != null)
+                    {
+                        cell.TableCellProperties = (TableCellProperties)headerProps.CloneNode(true);
+                    }
                 }
 
-                // Now populate the cell in this data row
-                XWPFTableCell cell = row.GetCell(cellNumber);
-                string columnHeader = headerRow.GetCell(cellNumber).GetText();
-                if (rowData.ContainsKey(columnHeader))
-                {
-                    cell.SetText(rowData[columnHeader]);
-                }
+                newRow.Append(cell);
             }
-        }
 
-        return table;
+            table.Append(newRow);
+        }
     }
 
     /// <summary>
-    /// Replaces the image placeholders in the output file with the specified images.
+    /// Processes image placeholders in the document.
     /// </summary>
-    /// <param name="documentPath">The ile path where the updated document will be saved.</param>
-    /// <param name="images">The data structure for holding the images details.</param>
-
-    private static async Task ProcessImagePlaceholders(
-        string documentPath,
-        List<ImageData> images)
+    /// <param name="document">The Word document.</param>
+    /// <param name="images">List of image data to process.</param>
+    private static async Task ProcessImagePlaceholders(WordprocessingDocument document, List<ImageData> images)
     {
         if (images == null || !images.Any())
         {
@@ -280,67 +321,48 @@ public static class WordDocumentGenerator
 
         try
         {
-            byte[] docBytes = await File.ReadAllBytesAsync(documentPath);
-
-            using (MemoryStream memoryStream = new MemoryStream())
+            MainDocumentPart? mainPart = document.MainDocumentPart;
+            if (mainPart == null)
             {
-                await memoryStream.WriteAsync(docBytes);
-                memoryStream.Position = 0;
+                return;
+            }
 
-                using (WordprocessingDocument wordDocument = WordprocessingDocument.Open(memoryStream, true))
+            List<Drawing> drawings = mainPart.Document.Descendants<Drawing>().ToList();
+
+            foreach (ImageData img in images)
+            {
+                try
                 {
-                    MainDocumentPart? mainPart = wordDocument.MainDocumentPart;
-                    if (mainPart == null)
+                    string tempFilePath = await PrepareImageFile(img);
+                    tempFiles.Add(tempFilePath);
+
+                    Drawing? drawing = drawings.FirstOrDefault(d =>
+                        d.Descendants<DocProperties>()
+                         .Any(dp => dp.Description == img.PlaceholderName));
+
+                    if (drawing == null)
                     {
-                        return;
+                        continue;
                     }
 
-                    List<Drawing> drawings = mainPart.Document.Descendants<Drawing>().ToList();
-
-                    foreach (ImageData img in images)
+                    foreach (Blip blip in drawing.Descendants<Blip>())
                     {
-                        try
+                        if (blip.Embed?.Value == null)
                         {
-                            string tempFilePath = await PrepareImageFile(img);
-                            tempFiles.Add(tempFilePath);
-
-                            Drawing? drawing = drawings.FirstOrDefault(d =>
-                                d.Descendants<DocProperties>()
-                                 .Any(dp => dp.Name == img.PlaceholderName));
-
-                            if (drawing == null)
-                            {
-                                continue;
-                            }
-
-                            foreach (Blip blip in drawing.Descendants<Blip>())
-                            {
-                                if (blip.Embed?.Value == null)
-                                {
-                                    continue;
-                                }
-
-                                OpenXmlPart imagePart = mainPart.GetPartById(blip.Embed!);
-                                using (Stream partStream = imagePart.GetStream(FileMode.Create))
-                                {
-                                    await using FileStream fileStream = File.OpenRead(tempFilePath);
-                                    await fileStream.CopyToAsync(partStream);
-                                }
-                            }
+                            continue;
                         }
-                        catch (Exception ex)
+
+                        OpenXmlPart imagePart = mainPart.GetPartById(blip.Embed!);
+                        using (Stream partStream = imagePart.GetStream(FileMode.Create))
+                        using (FileStream fileStream = File.OpenRead(tempFilePath))
                         {
-                            // Log error but continue with other images
-                            Debug.WriteLine($"Failed to process image {img.PlaceholderName}: {ex.Message}");
+                            await fileStream.CopyToAsync(partStream);
                         }
                     }
                 }
-
-                // Save the modified document
-                memoryStream.Position = 0;
-                using (FileStream fileStream = new FileStream(documentPath, FileMode.Create))
+                catch (Exception ex)
                 {
-                    await memoryStream.CopyToAsync(fileStream);
+                    Debug.WriteLine($"Failed to process image {img.PlaceholderName}: {ex.Message}");
                 }
             }
         }
@@ -355,13 +377,29 @@ public static class WordDocumentGenerator
         }
     }
 
+    /// <summary>
+    /// Prepares an image file from various sources (Base64, local file, URL).
+    /// </summary>
+    /// <param name="imageData">The image data containing source information.</param>
+    /// <returns>Path to the prepared temporary image file.</returns>
     private static async Task<string> PrepareImageFile(ImageData imageData)
     {
-        string tempFilePath = System.IO.Path.GetTempFileName();
+        string tempFilePath = IOPath.GetTempFileName();
 
         if (!string.IsNullOrEmpty(imageData.ImageExtension))
         {
-            tempFilePath = System.IO.Path.ChangeExtension(tempFilePath, imageData.ImageExtension);
+            // Define allowed image extensions
+            string[] allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg" };
+            string extension = imageData.ImageExtension.StartsWith(".") 
+                ? imageData.ImageExtension 
+                : "." + imageData.ImageExtension;
+            
+            if (!allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            {
+                throw new ArgumentException($"Invalid image extension: {imageData.ImageExtension}");
+            }
+
+            tempFilePath = IOPath.ChangeExtension(tempFilePath, extension);
         }
 
         switch (imageData.SourceType)
