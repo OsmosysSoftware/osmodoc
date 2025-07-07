@@ -30,22 +30,22 @@ Setting up the app in a Docker-based environment enables developers of non-Windo
 6. Copy data from [example template](.env.example) into `.env`. Then set suitable JWT key.
 7. Set `environment` variables `ASPNETCORE_ENVIRONMENT` and `BUILD_CONFIGURATION` as per requirement in [docker-compose.yaml](./docker-compose.yaml). Ensure correct formatting:
 
-#### Development (Default Configuration)
+#### Development
 ```yaml
-      - ASPNETCORE_ENVIRONMENT=Development
       - BUILD_CONFIGURATION=Debug
+      - ASPNETCORE_ENVIRONMENT=Development
 ```
 
 #### Testing/Staging
 ```yaml
-      - ASPNETCORE_ENVIRONMENT=Development
       - BUILD_CONFIGURATION=Release
+      - ASPNETCORE_ENVIRONMENT=Development
 ```
 
 #### Production
 ```yaml
-      - ASPNETCORE_ENVIRONMENT=Production
       - BUILD_CONFIGURATION=Release
+      - ASPNETCORE_ENVIRONMENT=Production
 ```
 
 8. Ensure Docker is running.
@@ -108,7 +108,12 @@ Note: We use a Temp folder to temporarily hold the modified HTML file before con
 # Basic usage
 
 ## PDF generation
+
+#### HTML TO PDF
 ```csharp
+string htmlTemplateFilePath = @"C:\Path\To\Template.html";
+string outputFilePath = @"C:\Path\To\GeneratedOutput.pdf";
+
 List<ContentMetaData> contentList = new List<ContentMetaData>
 {
     new ContentMetaData { Placeholder = "Incident UID", Content = "I-20230822-001" },
@@ -116,70 +121,143 @@ List<ContentMetaData> contentList = new List<ContentMetaData>
     new ContentMetaData { Placeholder = "Site", Content = "Headquarters" }
 };
 
-// Tools\\index.html - The path of the html template file in which changes are to be made.
-// Tools\\OutputFile.pdf - The path of the final pdf output file.
-PdfDocumentGenerator.GeneratePdfByTemplate("Tools\\index.html", contentList, "Tools\\OutputFile.pdf");
+await PdfDocumentGenerator.GeneratePdf(htmlTemplateFilePath, contentList, outputFilePath, isEjsTemplate: false, serializedEjsDataJson: null);
+```
+
+#### EJS TO PDF
+```csharp
+string htmlTemplateFilePath = @"C:\Path\To\Template.ejs";
+string outputFilePath = @"C:\Path\To\GeneratedOutput.pdf";
+string serializedEjsDataJson = "{\"title\": \"EJS Test\", \"user\": {\"name\": \"Jane\"}}"
+
+List<ContentMetaData> contentList = new List<ContentMetaData>{};
+
+await PdfDocumentGenerator.GeneratePdf(htmlTemplateFilePath, contentList, outputFilePath, isEjsTemplate: true, serializedEjsDataJson: serializedEjsDataJson);
 ```
 
 ## Word document generation
 ```csharp
-string templateFilePath = @"C:\Users\Admin\Desktop\Osmosys\Work\Projects\OsmoDoc Component\Testing\Document.docx";
-string outputFilePath = @"C:\Users\Admin\Desktop\Osmosys\Work\Projects\OsmoDoc Service Component\Testing\Test_Output.docx";
+string templateFilePath = @"C:\Path\To\Template.docx";
+string outputFilePath = @"C:\Path\To\GeneratedOutput.docx";
 
+// Text placeholders (optional)
+List<ContentData> placeholders = new List<ContentData>()
+{
+    new ContentData
+    {
+        Placeholder = "InvoiceNo",
+        Content = "INV-20250618",
+        ContentType = ContentType.Text,
+        ParentBody = ParentBody.None
+    },
+    new ContentData
+    {
+        Placeholder = "InvoiceDate",
+        Content = "18 June 2025",
+        ContentType = ContentType.Text,
+        ParentBody = ParentBody.None
+    },
+    new ContentData
+    {
+        Placeholder = "TableCellNote",
+        Content = "Thanks for using OsmoDoc",
+        ContentType = ContentType.Text,
+        ParentBody = ParentBody.Table
+    },
+    new ContentData
+    {
+        Placeholder = "CustomerName",
+        Content = "John Doe",
+        ContentType = ContentType.Text,
+        ParentBody = ParentBody.None
+    }
+};
+
+// Table data example
 List<TableData> tablesData = new List<TableData>()
+{
+    new TableData()
     {
-        new TableData()
+        TablePos = 1,
+        Data = new List<Dictionary<string, string>>()
+        {
+            new Dictionary<string, string>()
             {
-                TablePos = 5,
-                Data = new List<Dictionary<string, string>>()
-                {
-                    new Dictionary<string, string>()
-                    {
-                        { "Item Name", "1st med" },
-                        { "Dosage", "1" },
-                        { "Quantity", "1" },
-                        { "Precautions", "Take care" }
-                    },
-                    new Dictionary<string, string>()
-                    {
-                        { "Item Name", "2nd med" },
-                        { "Dosage", "1" },
-                        { "Quantity", "1" },
-                    }
-                }
+                { "Item", "Laptop" },
+                { "Oty", "2" },
+                { "Price", "60000" }
+            },
+            new Dictionary<string, string>()
+            {
+                { "Item", "Mouse" },
+                { "Oty", "5" },
+                { "Price", "500" }
             }
-    };
-
-    List<ContentData> contents = new List<ContentData>()
+        }
+    },
+    new TableData()
     {
-        new ContentData
+        TablePos = 2,
+        Data = new List<Dictionary<string, string>>()
         {
-            Placeholder = "Picture 1",
-            Content = @"../testImage1.jpg",
-            ContentType = ContentType.Image,
-            ParentBody = ParentBody.None
-        },
-        new ContentData
-        {
-            Placeholder = "Picture 2",
-            Content = @"../testImage2.jpg",
-            ContentType = ContentType.Image,
-            ParentBody = ParentBody.None
-        },
-    };
+            new Dictionary<string, string>()
+            {
+                { "TaxType", "CGST" },
+                { "Amount", "900" }
+            },
+            new Dictionary<string, string>()
+            {
+                { "TaxType", "SGST" },
+                { "Amount", "600" }
+            }
+        }
+    }
+};
 
-    DocumentData documentData = new DocumentData()
+
+// Image data for different source types
+List<ImageData> images = new List<ImageData>()
+{
+    // Local file
+    new ImageData
     {
-        Placeholders = contents,
-        TablesData = tablesData
-    };
+        PlaceholderName = "Picture 1",  // Alt text of image placeholder in Word
+        SourceType = ImageSourceType.LocalFile,
+        Data = @"C:\Images\logo.png"
+    },
 
-    WordDocumentGenerator.GenerateDocumentByTemplate(templateFilePath, documentData, outputFilePath);
+    // URL
+    new ImageData
+    {
+        PlaceholderName = "Picture 2",
+        SourceType = ImageSourceType.Url,
+        Data = "https://example.com/image.jpg"
+    },
+
+    // Base64 (ImageExtension is required when SourceType is Base64)
+    new ImageData
+    {
+        PlaceholderName = "Picture 3",
+        SourceType = ImageSourceType.Base64,
+        Data = "<base64-encoded-string>",
+        ImageExtension = ".jpg"
+    }
+};
+
+// Combine all document parts
+DocumentData documentData = new DocumentData
+{
+    Placeholders = placeholders,
+    TablesData = tablesData,
+    Images = images
+};
+
+// Generate final Word document
+await WordDocumentGenerator.GenerateDocumentByTemplate(templateFilePath, documentData, outputFilePath);
 ```
 
 # Targeted frameworks
-1. .NET Framework 4.5.2
-2. .NET Standard 2.0 - Can be installed as a dependency in applications running on .NET Framework 4.8 and modern .NET (Core, v5, v6 and later).
+1. .NET Framework 8.0
 
 # Citations
 - [NPOI](https://github.com/nissl-lab/npoi)
@@ -188,6 +266,7 @@ List<TableData> tablesData = new List<TableData>()
 
 # License
 The OsmoDoc is licensed under the [MIT](https://github.com/OsmosysSoftware/osmodoc/blob/main/LICENSE) license.
+
 ## 👏 Big Thanks to Our Contributors
 
 <a href="https://github.com/OsmosysSoftware/osmodoc/graphs/contributors">
