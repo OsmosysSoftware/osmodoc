@@ -33,6 +33,7 @@ public class WordController : ControllerBase
         BaseResponse response = new BaseResponse(ResponseStatus.Fail);
         string? docxTemplateFilePath = null;
         string? outputFilePath = null;
+        bool cleanupResources = this._configuration.GetValue("CONFIG:CLEAN_RESOURCES_GENERATED_BY_BASE64_STRINGS", false);
 
         try
         {
@@ -46,17 +47,14 @@ public class WordController : ControllerBase
                 throw new BadHttpRequestException("Document data is required");
             }
 
-            string tempPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:TEMP").Value
+            string tempPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:TEMP")
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:TEMP is missing.");
-            string inputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:INPUT").Value
+            string inputPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:INPUT")
                                ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:INPUT is missing.");
-            string wordPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:WORD").Value
+            string wordPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:WORD")
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:WORD is missing.");
-            string outputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:OUTPUT").Value
+            string outputPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:OUTPUT")
                                 ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:OUTPUT is missing.");
-            string imagesPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:IMAGES").Value
-                                ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:IMAGES is missing.");
-
 
             // Generate filepath to save base64 docx template
             docxTemplateFilePath = Path.Combine(
@@ -147,26 +145,29 @@ public class WordController : ControllerBase
         }
         finally
         {
-            if (docxTemplateFilePath != null && System.IO.File.Exists(docxTemplateFilePath))
+            if (cleanupResources)
             {
-                try
+                if (docxTemplateFilePath != null && System.IO.File.Exists(docxTemplateFilePath))
                 {
-                    System.IO.File.Delete(docxTemplateFilePath);
+                    try
+                    {
+                        System.IO.File.Delete(docxTemplateFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        this._logger.LogError($"Error in deleting file at path {docxTemplateFilePath}: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
+                if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
                 {
-                    this._logger.LogError($"Error in deleting file at path {docxTemplateFilePath}: {ex.Message}");
-                }
-            }
-            if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
-            {
-                try
-                {
-                    System.IO.File.Delete(outputFilePath);
-                }
-                catch (Exception ex)
-                {
-                    this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                    try
+                    {
+                        System.IO.File.Delete(outputFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                    }
                 }
             }
         }

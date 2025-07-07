@@ -29,6 +29,7 @@ public class PdfController : ControllerBase
         BaseResponse response = new BaseResponse(ResponseStatus.Fail);
         string? htmlTemplateFilePath = null;
         string? outputFilePath = null;
+        bool cleanupResources = this._configuration.GetValue("CONFIG:CLEAN_RESOURCES_GENERATED_BY_BASE64_STRINGS", false);
 
         try
         {
@@ -37,15 +38,15 @@ public class PdfController : ControllerBase
                 throw new BadHttpRequestException("Request body cannot be null");
             }
 
-            string tempPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:TEMP").Value
+            string tempPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:TEMP")
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:TEMP is missing.");
-            string inputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:INPUT").Value
+            string inputPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:INPUT")
                                ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:INPUT is missing.");
-            string htmlPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:HTML").Value
+            string htmlPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:HTML")
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:HTML is missing.");
-            string outputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:OUTPUT").Value
+            string outputPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:OUTPUT")
                                 ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:OUTPUT is missing.");
-            string pdfPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:PDF").Value
+            string pdfPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:PDF")
                              ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:PDF is missing.");
 
 
@@ -125,26 +126,29 @@ public class PdfController : ControllerBase
         }
         finally
         {
-            if (htmlTemplateFilePath != null && System.IO.File.Exists(htmlTemplateFilePath))
+            if (cleanupResources)
             {
-                try
+                if (htmlTemplateFilePath != null && System.IO.File.Exists(htmlTemplateFilePath))
                 {
-                    System.IO.File.Delete(htmlTemplateFilePath);
+                    try
+                    {
+                        System.IO.File.Delete(htmlTemplateFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        this._logger.LogError($"Error in deleting file at path {htmlTemplateFilePath}: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
+                if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
                 {
-                    this._logger.LogError($"Error in deleting file at path {htmlTemplateFilePath}: {ex.Message}");
-                }
-            }
-            if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
-            {
-                try
-                {
-                    System.IO.File.Delete(outputFilePath);
-                }
-                catch (Exception ex)
-                {
-                    this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                    try
+                    {
+                        System.IO.File.Delete(outputFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                    }
                 }
             }
         }
@@ -158,6 +162,7 @@ public class PdfController : ControllerBase
         BaseResponse response = new BaseResponse(ResponseStatus.Fail);
         string? ejsTemplateFilePath = null;
         string? outputFilePath = null;
+        bool cleanupResources = this._configuration.GetValue("CONFIG:CLEAN_RESOURCES_GENERATED_BY_BASE64_STRINGS", false);
 
         try
         {
@@ -166,15 +171,15 @@ public class PdfController : ControllerBase
                 throw new BadHttpRequestException("Request body cannot be null");
             }
 
-            string tempPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:TEMP").Value
+            string tempPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:TEMP")
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:TEMP is missing.");
-            string inputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:INPUT").Value
+            string inputPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:INPUT")
                                ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:INPUT is missing.");
-            string ejsPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:EJS").Value
+            string ejsPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:EJS")
                               ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:EJS is missing.");
-            string outputPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:OUTPUT").Value
+            string outputPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:OUTPUT")
                                 ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:OUTPUT is missing.");
-            string pdfPath = this._configuration.GetSection("TEMPORARY_FILE_PATHS:PDF").Value
+            string pdfPath = this._configuration.GetValue<string>("TEMPORARY_FILE_PATHS:PDF")
                              ?? throw new InvalidOperationException("Configuration TEMPORARY_FILE_PATHS:PDF is missing.");
 
             // Generate filepath to save base64 html template
@@ -253,26 +258,29 @@ public class PdfController : ControllerBase
         }
         finally
         {
-            if (ejsTemplateFilePath != null && System.IO.File.Exists(ejsTemplateFilePath))
+            if (cleanupResources)
             {
-                try
+                if (ejsTemplateFilePath != null && System.IO.File.Exists(ejsTemplateFilePath))
                 {
-                    System.IO.File.Delete(ejsTemplateFilePath);
+                    try
+                    {
+                        System.IO.File.Delete(ejsTemplateFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        this._logger.LogError($"Error in deleting file at path {ejsTemplateFilePath}: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
+                if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
                 {
-                    this._logger.LogError($"Error in deleting file at path {ejsTemplateFilePath}: {ex.Message}");
-                }
-            }
-            if (outputFilePath != null && System.IO.File.Exists(outputFilePath))
-            {
-                try
-                {
-                    System.IO.File.Delete(outputFilePath);
-                }
-                catch (Exception ex)
-                {
-                    this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                    try
+                    {
+                        System.IO.File.Delete(outputFilePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        this._logger.LogError($"Error in deleting file at path {outputFilePath}: {ex.Message}");
+                    }
                 }
             }
         }
