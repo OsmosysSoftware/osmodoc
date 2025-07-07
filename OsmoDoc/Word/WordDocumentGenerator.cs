@@ -430,8 +430,9 @@ public static class WordDocumentGenerator
                     extension = ".jpg"; // fallback if no extension in path/URL
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger.LogWarning(ex, $"Failed to determine image extension from path: {imageData.Data}");
                 extension = ".jpg"; // safe fallback on exception
             }
         }
@@ -440,7 +441,7 @@ public static class WordDocumentGenerator
         string[] allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg" };
         if (!allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
         {
-            throw new ArgumentException($"Invalid image extension: {imageData.ImageExtension}");
+            throw new ArgumentException($"Invalid image extension: {extension}");
         }
 
         tempFilePath = IOPath.ChangeExtension(tempFilePath, extension);
@@ -454,12 +455,12 @@ public static class WordDocumentGenerator
                 break;
 
             case ImageSourceType.LocalFile:
-                if (!File.Exists(imageData.Data))
+                string fullPath = IOPath.GetFullPath(imageData.Data);
+                if (!File.Exists(fullPath))
                 {
-                    throw new FileNotFoundException("Image file not found", imageData.Data);
+                    throw new FileNotFoundException("Image file not found", fullPath);
                 }
-
-                File.Copy(imageData.Data, tempFilePath, true);
+                File.Copy(fullPath, tempFilePath, true);
                 break;
 
             case ImageSourceType.Url:
