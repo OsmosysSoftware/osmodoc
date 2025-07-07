@@ -60,6 +60,7 @@ public static class PdfDocumentGenerator
         }
 
         string? ejsConvertedHtmlPath = null;
+        string? tempEjsDirectory = null;
         string? tempModifiedHtmlDirectory = null;
 
         try
@@ -73,7 +74,7 @@ public static class PdfDocumentGenerator
                 }
 
                 // Convert ejs file to an equivalent html
-                ejsConvertedHtmlPath = await ConvertEjsToHTML(templatePath, outputFilePath, serializedEjsDataJson);
+                (ejsConvertedHtmlPath, tempEjsDirectory) = await ConvertEjsToHTML(templatePath, outputFilePath, serializedEjsDataJson);
                 templatePath = ejsConvertedHtmlPath;
             }
 
@@ -86,7 +87,7 @@ public static class PdfDocumentGenerator
         finally
         {
             // Cleanup temporary directories and files
-            CleanupTemporaryResources(ejsConvertedHtmlPath, tempModifiedHtmlDirectory);
+            CleanupTemporaryResources(ejsConvertedHtmlPath, tempEjsDirectory, tempModifiedHtmlDirectory);
         }
     }
 
@@ -173,7 +174,7 @@ public static class PdfDocumentGenerator
         }
     }
 
-    private async static Task<string> ConvertEjsToHTML(string ejsFilePath, string outputFilePath, string? ejsDataJson)
+    private async static Task<(string htmlPath, string tempDirectory)> ConvertEjsToHTML(string ejsFilePath, string outputFilePath, string? ejsDataJson)
     {
         // Generate directory
         string? directoryPath = Path.GetDirectoryName(outputFilePath);
@@ -232,7 +233,7 @@ public static class PdfDocumentGenerator
             }
         }
 
-        return tempHtmlFilePath;
+        return (tempHtmlFilePath, tempDirectoryFilePath);
     }
 
     private static bool IsValidJSON(string json)
@@ -264,7 +265,7 @@ public static class PdfDocumentGenerator
         }
     }
 
-    private static void CleanupTemporaryResources(string? ejsConvertedHtmlPath, string? tempModifiedHtmlDirectory)
+    private static void CleanupTemporaryResources(string? ejsConvertedHtmlPath, string? tempEjsDirectory, string? tempModifiedHtmlDirectory)
     {
         // Clean up EJS converted HTML file
         if (!string.IsNullOrEmpty(ejsConvertedHtmlPath) && File.Exists(ejsConvertedHtmlPath))
@@ -277,6 +278,19 @@ public static class PdfDocumentGenerator
             {
                 // Log the exception but don't throw to avoid masking original exceptions
                 _logger.LogWarning(ex, $"Failed to delete EJS converted HTML file {ejsConvertedHtmlPath}");
+            }
+        }
+
+        // Clean up temp EJS directory
+        if (!string.IsNullOrEmpty(tempEjsDirectory) && Directory.Exists(tempEjsDirectory))
+        {
+            try
+            {
+                Directory.Delete(tempEjsDirectory, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"Failed to delete temporary EJS directory {tempEjsDirectory}");
             }
         }
 
