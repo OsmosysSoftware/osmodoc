@@ -1,5 +1,6 @@
 ﻿using OsmoDoc.Pdf.Models;
-using Newtonsoft.Json;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,17 @@ namespace OsmoDoc.Pdf;
 
 public static class PdfDocumentGenerator
 {
+    private static ILogger _logger = NullLogger.Instance;
+
+    /// <summary>
+    /// Configures logging for the WordDocumentGenerator
+    /// </summary>
+    /// <param name="logger">Logger instance to use</param>
+    public static void ConfigureLogging(ILogger logger)
+    {
+        _logger = logger ?? NullLogger.Instance;
+    }
+
     /// <summary>
     /// Generates a PDF document from an HTML or EJS template.
     /// </summary>
@@ -264,7 +276,7 @@ public static class PdfDocumentGenerator
             catch (Exception ex)
             {
                 // Log the exception but don't throw to avoid masking original exceptions
-                Console.WriteLine($"Warning: Could not delete EJS converted HTML file {ejsConvertedHtmlPath}: {ex.Message}");
+                _logger.LogWarning(ex, $"Failed to delete EJS converted HTML file {ejsConvertedHtmlPath}");
             }
         }
 
@@ -278,7 +290,7 @@ public static class PdfDocumentGenerator
             catch (Exception ex)
             {
                 // Log the exception but don't throw to avoid masking original exceptions
-                Console.WriteLine($"Warning: Could not delete temporary directory {tempModifiedHtmlDirectory}: {ex.Message}");
+                _logger.LogWarning(ex, $"Failed to delete temporary directory {tempModifiedHtmlDirectory}");
             }
         }
     }
