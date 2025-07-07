@@ -2,10 +2,11 @@ using DocumentFormat.OpenXml.Drawing;
 using DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using OsmoDoc.Word.Models;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -28,6 +29,16 @@ namespace OsmoDoc.Word;
 public static class WordDocumentGenerator
 {
     private const string PlaceholderPattern = @"{[a-zA-Z][a-zA-Z0-9_-]*}";
+    private static ILogger _logger = NullLogger.Instance;
+
+    /// <summary>
+    /// Configures logging for the WordDocumentGenerator
+    /// </summary>
+    /// <param name="logger">Logger instance to use</param>
+    public static void ConfigureLogging(ILogger logger)
+    {
+        _logger = logger ?? NullLogger.Instance;
+    }
 
     /// <summary>
     /// Generates a Word document based on a template, replaces placeholders with data, and saves it to the specified output file path.
@@ -52,36 +63,44 @@ public static class WordDocumentGenerator
             throw new ArgumentNullException(nameof(outputFilePath));
         }
 
-        // Copy template to output location
-        File.Copy(templateFilePath, outputFilePath, true);
-
-        using (WordprocessingDocument document = WordprocessingDocument.Open(outputFilePath, true))
+        try
         {
-            if (document.MainDocumentPart == null)
+            // Copy template to output location
+            File.Copy(templateFilePath, outputFilePath, true);
+
+            using (WordprocessingDocument document = WordprocessingDocument.Open(outputFilePath, true))
             {
-                throw new InvalidOperationException("Document does not contain a main document part.");
+                if (document.MainDocumentPart == null)
+                {
+                    throw new InvalidOperationException("Document does not contain a main document part.");
+                }
+
+                // Create dictionaries for each type of placeholders
+                Dictionary<string, string> textPlaceholders = documentData.Placeholders
+                    .Where(content => content.ParentBody == ParentBody.None && content.ContentType == ContentType.Text)
+                    .ToDictionary(content => "{" + content.Placeholder + "}", content => content.Content);
+
+                Dictionary<string, string> tableContentPlaceholders = documentData.Placeholders
+                    .Where(content => content.ParentBody == ParentBody.Table && content.ContentType == ContentType.Text)
+                    .ToDictionary(content => "{" + content.Placeholder + "}", content => content.Content);
+
+                // Replace text placeholders in main document
+                ReplaceTextPlaceholders(document.MainDocumentPart.Document, textPlaceholders);
+
+                // Replace table placeholders and populate tables
+                ProcessTables(document.MainDocumentPart.Document, tableContentPlaceholders, documentData.TablesData);
+
+                // Process images
+                await ProcessImagePlaceholders(document, documentData.Images);
+
+                // Save the document
+                document.Save();
             }
-
-            // Create dictionaries for each type of placeholders
-            Dictionary<string, string> textPlaceholders = documentData.Placeholders
-                .Where(content => content.ParentBody == ParentBody.None && content.ContentType == ContentType.Text)
-                .ToDictionary(content => "{" + content.Placeholder + "}", content => content.Content);
-
-            Dictionary<string, string> tableContentPlaceholders = documentData.Placeholders
-                .Where(content => content.ParentBody == ParentBody.Table && content.ContentType == ContentType.Text)
-                .ToDictionary(content => "{" + content.Placeholder + "}", content => content.Content);
-
-            // Replace text placeholders in main document
-            ReplaceTextPlaceholders(document.MainDocumentPart.Document, textPlaceholders);
-
-            // Replace table placeholders and populate tables
-            ProcessTables(document.MainDocumentPart.Document, tableContentPlaceholders, documentData.TablesData);
-
-            // Process images
-            await ProcessImagePlaceholders(document, documentData.Images);
-
-            // Save the document
-            document.Save();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Failed to generate document from template: {templateFilePath}");
+            throw; // Re-throw for consumers to handle
         }
     }
 
@@ -99,12 +118,12 @@ public static class WordDocumentGenerator
 
         // Process all paragraphs in the document
         List<Paragraph> paragraphs = document.Descendants<Paragraph>().ToList();
-        
+
         foreach (Paragraph paragraph in paragraphs)
         {
             // Get paragraph text to check for placeholders
             string paragraphText = GetParagraphText(paragraph);
-            
+
             if (string.IsNullOrEmpty(paragraphText) || !Regex.IsMatch(paragraphText, PlaceholderPattern))
             {
                 continue;
@@ -146,7 +165,7 @@ public static class WordDocumentGenerator
 
         // Concatenate all text to get the full paragraph content
         string fullText = string.Join("", textElements.Select(t => t.Text));
-        
+
         // Check if any placeholders exist in the full text
         bool hasPlaceholders = placeholders.Keys.Any(placeholder => fullText.Contains(placeholder));
         if (!hasPlaceholders)
@@ -220,19 +239,19 @@ public static class WordDocumentGenerator
         }
 
         List<TableRow> tableRows = table.Elements<TableRow>().ToList();
-        
+
         foreach (TableRow row in tableRows)
         {
             List<TableCell> cells = row.Elements<TableCell>().ToList();
-            
+
             foreach (TableCell cell in cells)
             {
                 List<Paragraph> paragraphs = cell.Elements<Paragraph>().ToList();
-                
+
                 foreach (Paragraph paragraph in paragraphs)
                 {
                     string paragraphText = GetParagraphText(paragraph);
-                    
+
                     if (string.IsNullOrEmpty(paragraphText) || !Regex.IsMatch(paragraphText, PlaceholderPattern))
                     {
                         continue;
@@ -264,7 +283,7 @@ public static class WordDocumentGenerator
         }
 
         // Get column headers
-        List<string> columnHeaders = headerCells.Select(cell => 
+        List<string> columnHeaders = headerCells.Select(cell =>
         {
             Paragraph? firstParagraph = cell.Elements<Paragraph>().FirstOrDefault();
             if (firstParagraph != null)
@@ -362,7 +381,7 @@ public static class WordDocumentGenerator
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"Failed to process image {img.PlaceholderName}: {ex.Message}");
+                    _logger.LogWarning(ex, $"Failed to process image placeholder: {img.PlaceholderName}");
                 }
             }
         }
@@ -371,8 +390,14 @@ public static class WordDocumentGenerator
             // Clean up temp files
             foreach (string file in tempFiles)
             {
-                try { File.Delete(file); }
-                catch { /* Ignore cleanup errors */ }
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, $"Failed to delete temporary file: {file}.");
+                }
             }
         }
     }
@@ -390,10 +415,10 @@ public static class WordDocumentGenerator
         {
             // Define allowed image extensions
             string[] allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".svg" };
-            string extension = imageData.ImageExtension.StartsWith(".") 
-                ? imageData.ImageExtension 
+            string extension = imageData.ImageExtension.StartsWith(".")
+                ? imageData.ImageExtension
                 : "." + imageData.ImageExtension;
-            
+
             if (!allowedExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
             {
                 throw new ArgumentException($"Invalid image extension: {imageData.ImageExtension}");
