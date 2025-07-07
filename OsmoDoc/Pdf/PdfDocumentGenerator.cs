@@ -191,11 +191,9 @@ public static class PdfDocumentGenerator
         string contentToWrite = ejsDataJson ?? "{}";
         File.WriteAllText(ejsDataJsonFilePath, contentToWrite);
 
-        string commandLine = "cmd.exe";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-        {
-            commandLine = "ejs";
-        }
+
+        // string commandLine = "cmd.exe";
+        string commandLine = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "cmd.exe" : "npx";
         string arguments = EjsToHtmlArgumentsBasedOnOS(ejsFilePath, ejsDataJsonFilePath, tempHtmlFilePath);
 
         ProcessStartInfo psi = new ProcessStartInfo
@@ -242,11 +240,11 @@ public static class PdfDocumentGenerator
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            return $"/C ejs \"{ejsFilePath}\" -f \"{ejsDataJsonFilePath}\" -o \"{tempHtmlFilePath}\"";
+            return $"/C npx ejs \"{ejsFilePath}\" -f \"{ejsDataJsonFilePath}\" -o \"{tempHtmlFilePath}\"";
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
-            return $"\"{ejsFilePath}\" -f \"{ejsDataJsonFilePath}\" -o \"{tempHtmlFilePath}\"";
+            return $"ejs \"{ejsFilePath}\" -f \"{ejsDataJsonFilePath}\" -o \"{tempHtmlFilePath}\"";
         }
         else
         {
