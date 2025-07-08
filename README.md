@@ -1,276 +1,135 @@
 # OsmoDoc
-OsmoDoc is a library with the following functions
-1. **Generate Word documents** - Read Word document files as a template and replace the placeholder with actual data.
-2. **Generate PDF documents** - Read an HTML file as a template and replace placeholders with actual data. Convert the HTML file to PDF
 
-# Features
+**OsmoDoc** is a powerful .NET library designed to generate PDF and Word documents dynamically using templates and structured data.
 
-## Word document generation
-- Replace placeholders in text paragraph with values.
-- Replace placeholders in tables.
-- Multiple placeholders in the same table cell/line/paragraph can be replaced.
-- Populate table with new data.
-- Replace images with image's placeholder. The image's position will be maintained based on the position of its placeholder image. Image size will also be maintained based on placeholder image.
+## Key Features
 
-## PDF document generation
-- Converts an HTML document to PDF.
-- Replace placeholders in the document with actual string data.
+### Word Document Generation
 
-# How to set up the Application in a Docker-based environment (Linux)
+* Replace placeholders in paragraphs and table cells with actual text.
+* Handle multiple placeholders in a single paragraph or table cell.
+* Populate entire tables using structured data.
+* Replace placeholder images while maintaining the original image's position and size.
 
-Setting up the app in a Docker-based environment enables developers of non-Windows origins to run the backend application on their machine to test the APIs.
+### PDF Document Generation
 
-## Steps
+* Convert HTML templates to PDFs with dynamic placeholder substitution.
+* Supports both plain HTML and EJS (Embedded JavaScript Templates).
 
-1. [Install Docker](https://docs.docker.com/engine/install/) on your machine. Choose to follow the instructions based on your device OS.
-2. [Install Docker Compose](https://docs.docker.com/compose/install/). A separate installation is required for Linux-based OS. If you are using Windows or macOS, installing the Docker Desktop app includes Docker Compose.
-3. Clone the project `osmodoc`.
-4. (Optional) [Install Docker Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker).
-5. In the root directory of the project, create a new file `.env`.
-6. Copy data from [example template](.env.example) into `.env`. Then set suitable JWT key.
-7. Set `environment` variables `ASPNETCORE_ENVIRONMENT` and `BUILD_CONFIGURATION` as per requirement in [docker-compose.yaml](./docker-compose.yaml). Ensure correct formatting:
+### EJS to PDF Support
 
-#### Development
-```yaml
-      - BUILD_CONFIGURATION=Debug
-      - ASPNETCORE_ENVIRONMENT=Development
+* Enables advanced templating logic with JavaScript-based syntax.
+* JSON string data is passed to the EJS template at runtime.
+
+---
+
+## Development Setup
+
+### Windows
+
+* `wkhtmltopdf.exe` is already included in the repo at `OsmoDoc.API/wwwroot/Tool/wkhtmltopdf.exe`.
+* Alternatively, download it from [https://wkhtmltopdf.org/downloads.html](https://wkhtmltopdf.org/downloads.html) and set the path manually.
+* Install [Node.js](https://nodejs.org/) and npm.
+* Install EJS globally via npm:
+
+```bash
+npm install -g ejs
 ```
 
-#### Testing/Staging
-```yaml
-      - BUILD_CONFIGURATION=Release
-      - ASPNETCORE_ENVIRONMENT=Development
+### Linux
+
+Install the following dependencies using your terminal:
+
+```bash
+sudo apt-get update && sudo apt-get install -y --no-install-recommends \
+    wkhtmltopdf \
+    nodejs \
+    npm
+sudo chmod 755 /usr/bin/wkhtmltopdf
+npm install -g --only=prod ejs
 ```
 
-#### Production
-```yaml
-      - BUILD_CONFIGURATION=Release
-      - ASPNETCORE_ENVIRONMENT=Production
-```
+### Common Steps (Windows & Linux)
 
-8. Ensure Docker is running.
-9. Execute the following commands to dockerize `osmodoc` using `docker-compose.yaml`:
+* Clone the repo and navigate to the root folder.
+* Create a `.env` file and copy values from `.env.example`.
+* Set your environment-specific values.
 
-```shell
-# build the container
+---
+
+## 📦 Docker-Based Setup (Cross-platform)
+
+Set up the backend application in a Docker-based environment (Windows or Linux) to run and test APIs.
+
+### Prerequisites
+
+1. Install [Docker](https://docs.docker.com/engine/install/)
+2. Install [Docker Compose](https://docs.docker.com/compose/install/)
+3. (Optional) Install [Docker Extension for VS Code](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-docker)
+
+### Environment Setup
+
+Before proceeding with Docker commands, create a `.env` file in the root directory and populate it with required variables. You can copy from the provided `.env.example` file.
+
+> **Note:** All required values such as `SERVER_PORT`, `REDIS_PORT`, `REDIS_HOST`, `COMPOSE_PROJECT_NAME`, etc., must be set in the `.env` file.
+
+### Docker Commands
+
+Once `.env` is set, execute the following commands:
+
+```bash
 docker compose build
-
-# run the application
-docker compose up
+docker compose up -d
 ```
 
-10. The project will run on `http://localhost:5000`. Please check [Troubleshooting](#troubleshooting) if the build failed.
-11. You can access the **Swagger UI** at `http://localhost:5000/swagger/index.html` in **Development** Environment.
-12. Test the API via **Postman**. The app can be accessed using `http://localhost:5000/<API>`.
+The application will be accessible at `http://localhost:<SERVER_PORT>` as configured in your `.env`.
 
-## Troubleshooting
+* Swagger UI (Development): `http://localhost:<SERVER_PORT>/swagger/index.html`
+* API Access: `http://localhost:<SERVER_PORT>/<API>`
 
-A known issue while building the container is the following:
+### 🛠 Troubleshooting
 
-```shell
-E: failed to solve: process "/bin/sh -c <sample Dockerfile step>" did not complete successfully: exit code: 100
-```
+If build fails due to network issues:
 
-This is a network related issue where it is failing to fetch files from an external source. It can be verified in the **Docker logs**:
-
-```shell
-E: Failed to fetch http://sample/link/for.file Unable to connect to sample.download.location:80: [IP: ...]
-```
-
-**Solution:** Prune the failed build and rebuild the application using the following commands:
-
-```shell
-# prune all unused containers, networks, images, build cache
+```bash
 docker system prune -a
-
-# rebuild the container
 docker compose build
-
-# run the application
-docker compose up
+docker compose up -d
 ```
 
-**NOTE:** Please go through the [official documentation on prune command](https://docs.docker.com/config/pruning/) before using it.
+Refer to [prune docs](https://docs.docker.com/config/pruning/) before using.
 
-# How to set up the library (Windows)
+---
 
-## Steps for installing wkhtmltopdf
-- Go to website: https://wkhtmltopdf.org/downloads.html
-- Select the version of wkhtmltopdf installer that you need to download based on your system requirements.
-- Finish Installation.
+## Usage Guide
 
-## Including wkhtmltopdf executable file to build package
-- Go to the location to the bin files of your project where the OsmoDoc DLL is located.
-- Create a folder called Tools and place the wkhtmltopdf.exe file there. wkhtmltopdf.exe can be found in the Program Files in C directory after it is installed.
+Sample usage for PDF (HTML + EJS) and Word generation is available in [`usage_guide.md`](docs/guides/usage_guide.md).
 
-Note: We use a Temp folder to temporarily hold the modified HTML file before converting it to a PDF file. After the conversion is done, the temporary file is removed. The code is already provided with the location of the temp file, so no modification is required in the code, and the temp folder will be used automatically.
+---
 
-# Basic usage
+## Target Framework
 
-## PDF generation
+* .NET 8.0
 
-#### HTML TO PDF
-```csharp
-string htmlTemplateFilePath = @"C:\Path\To\Template.html";
-string outputFilePath = @"C:\Path\To\GeneratedOutput.pdf";
+---
 
-List<ContentMetaData> contentList = new List<ContentMetaData>
-{
-    new ContentMetaData { Placeholder = "Incident UID", Content = "I-20230822-001" },
-    new ContentMetaData { Placeholder = "Description", Content = "Suspicious activity reported" },
-    new ContentMetaData { Placeholder = "Site", Content = "Headquarters" }
-};
+## Citations
 
-await PdfDocumentGenerator.GeneratePdf(htmlTemplateFilePath, contentList, outputFilePath, isEjsTemplate: false, serializedEjsDataJson: null);
-```
+* [OpenXML SDK](https://github.com/dotnet/Open-XML-SDK)
+* [wkhtmltopdf](https://wkhtmltopdf.org/)
 
-#### EJS TO PDF
-```csharp
-string htmlTemplateFilePath = @"C:\Path\To\Template.ejs";
-string outputFilePath = @"C:\Path\To\GeneratedOutput.pdf";
-string serializedEjsDataJson = "{\"title\": \"EJS Test\", \"user\": {\"name\": \"Jane\"}}"
+---
 
-List<ContentMetaData> contentList = new List<ContentMetaData>{};
+## License
 
-await PdfDocumentGenerator.GeneratePdf(htmlTemplateFilePath, contentList, outputFilePath, isEjsTemplate: true, serializedEjsDataJson: serializedEjsDataJson);
-```
+This project is licensed under the [MIT License](https://github.com/OsmosysSoftware/osmodoc/blob/main/LICENSE).
 
-## Word document generation
-```csharp
-string templateFilePath = @"C:\Path\To\Template.docx";
-string outputFilePath = @"C:\Path\To\GeneratedOutput.docx";
+---
 
-// Text placeholders (optional)
-List<ContentData> placeholders = new List<ContentData>()
-{
-    new ContentData
-    {
-        Placeholder = "InvoiceNo",
-        Content = "INV-20250618",
-        ContentType = ContentType.Text,
-        ParentBody = ParentBody.None
-    },
-    new ContentData
-    {
-        Placeholder = "InvoiceDate",
-        Content = "18 June 2025",
-        ContentType = ContentType.Text,
-        ParentBody = ParentBody.None
-    },
-    new ContentData
-    {
-        Placeholder = "TableCellNote",
-        Content = "Thanks for using OsmoDoc",
-        ContentType = ContentType.Text,
-        ParentBody = ParentBody.Table
-    },
-    new ContentData
-    {
-        Placeholder = "CustomerName",
-        Content = "John Doe",
-        ContentType = ContentType.Text,
-        ParentBody = ParentBody.None
-    }
-};
+## Acknowledgements
 
-// Table data example
-List<TableData> tablesData = new List<TableData>()
-{
-    new TableData()
-    {
-        TablePos = 1,
-        Data = new List<Dictionary<string, string>>()
-        {
-            new Dictionary<string, string>()
-            {
-                { "Item", "Laptop" },
-                { "Oty", "2" },
-                { "Price", "60000" }
-            },
-            new Dictionary<string, string>()
-            {
-                { "Item", "Mouse" },
-                { "Oty", "5" },
-                { "Price", "500" }
-            }
-        }
-    },
-    new TableData()
-    {
-        TablePos = 2,
-        Data = new List<Dictionary<string, string>>()
-        {
-            new Dictionary<string, string>()
-            {
-                { "TaxType", "CGST" },
-                { "Amount", "900" }
-            },
-            new Dictionary<string, string>()
-            {
-                { "TaxType", "SGST" },
-                { "Amount", "600" }
-            }
-        }
-    }
-};
-
-
-// Image data for different source types
-List<ImageData> images = new List<ImageData>()
-{
-    // Local file
-    new ImageData
-    {
-        PlaceholderName = "Picture 1",  // Alt text of image placeholder in Word
-        SourceType = ImageSourceType.LocalFile,
-        Data = @"C:\Images\logo.png"
-    },
-
-    // URL
-    new ImageData
-    {
-        PlaceholderName = "Picture 2",
-        SourceType = ImageSourceType.Url,
-        Data = "https://example.com/image.jpg"
-    },
-
-    // Base64 (ImageExtension is required when SourceType is Base64)
-    new ImageData
-    {
-        PlaceholderName = "Picture 3",
-        SourceType = ImageSourceType.Base64,
-        Data = "<base64-encoded-string>",
-        ImageExtension = ".jpg"
-    }
-};
-
-// Combine all document parts
-DocumentData documentData = new DocumentData
-{
-    Placeholders = placeholders,
-    TablesData = tablesData,
-    Images = images
-};
-
-// Generate final Word document
-await WordDocumentGenerator.GenerateDocumentByTemplate(templateFilePath, documentData, outputFilePath);
-```
-
-# Targeted frameworks
-1. .NET Framework 8.0
-
-# Citations
-- [NPOI](https://github.com/nissl-lab/npoi)
-- [OpenXML](https://github.com/dotnet/Open-XML-SDK)
-- [wkhtmltopdf](https://wkhtmltopdf.org/)
-
-# License
-The OsmoDoc is licensed under the [MIT](https://github.com/OsmosysSoftware/osmodoc/blob/main/LICENSE) license.
-
-## 👏 Big Thanks to Our Contributors
+Thanks to all the contributors who helped improve OsmoDoc!
 
 <a href="https://github.com/OsmosysSoftware/osmodoc/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=OsmosysSoftware/osmodoc" alt="Contributors" />
 </a>
-
-We appreciate the time and effort put in by all contributors to make this project better!
