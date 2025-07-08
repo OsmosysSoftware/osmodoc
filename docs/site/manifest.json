@@ -1,8 +1,413 @@
 {
-  "homepages": [],
-  "source_base_path": "./",
+  "source_base_path": "/home/jatingupta/Desktop/Work/osmodoc",
   "xrefmap": "xrefmap.yml",
   "files": [
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Controllers.LoginController.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Controllers.LoginController.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Controllers.LoginController",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Controllers.PdfController.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Controllers.PdfController.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Controllers.PdfController",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Controllers.WordController.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Controllers.WordController.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Controllers.WordController",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Controllers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Controllers.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Controllers",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.DotEnv.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.DotEnv.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.DotEnv",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Helpers.AuthenticationHelper.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Helpers.AuthenticationHelper.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Helpers.AuthenticationHelper",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Helpers.AutoMappingProfile.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Helpers.AutoMappingProfile.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Helpers.AutoMappingProfile",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Helpers.Base64StringHelper.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Helpers.Base64StringHelper.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Helpers.Base64StringHelper",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Helpers.CommonMethodsHelper.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Helpers.CommonMethodsHelper.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Helpers.CommonMethodsHelper",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Helpers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Helpers.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Helpers",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.BaseResponse.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.BaseResponse.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.BaseResponse",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.LoginRequestDTO.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.LoginRequestDTO.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.LoginRequestDTO",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.ModelValidationBadRequest.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.ModelValidationBadRequest.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.ModelValidationBadRequest",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.PdfGenerationRequestDTO.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.PdfGenerationRequestDTO.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.PdfGenerationRequestDTO",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.ResponseStatus.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.ResponseStatus.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.ResponseStatus",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.RevokeTokenRequestDTO.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.RevokeTokenRequestDTO.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.RevokeTokenRequestDTO",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.WordDocumentDataRequestDTO.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.WordDocumentDataRequestDTO.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.WordDocumentDataRequestDTO",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.WordGenerationRequestDTO.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.WordGenerationRequestDTO.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models.WordGenerationRequestDTO",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.Models.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.Models.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API.Models",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.API.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.API.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.API",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Pdf.Models.ContentMetaData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Pdf.Models.ContentMetaData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Pdf.Models.ContentMetaData",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Pdf.Models.DocumentData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Pdf.Models.DocumentData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Pdf.Models.DocumentData",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Pdf.Models.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Pdf.Models.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Pdf.Models",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Pdf.OsmoDocPdfConfig.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Pdf.OsmoDocPdfConfig.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Pdf.OsmoDocPdfConfig",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Pdf.PdfDocumentGenerator.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Pdf.PdfDocumentGenerator.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Pdf.PdfDocumentGenerator",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Pdf.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Pdf.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Pdf",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Services.IRedisTokenStoreService.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Services.IRedisTokenStoreService.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Services.IRedisTokenStoreService",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Services.RedisTokenStoreService.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Services.RedisTokenStoreService.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Services.RedisTokenStoreService",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Services.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Services.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Services",
+      "Summary": null
+    },
     {
       "type": "ManagedReference",
       "source_relative_path": "obj/10.0.2/api/OsmoDoc.Word.Models.ContentData.yml",
@@ -11,7 +416,11 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.Models.ContentData.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models.ContentData",
+      "Summary": "Represents the data for a content placeholder in a Word document."
     },
     {
       "type": "ManagedReference",
@@ -21,7 +430,11 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.Models.ContentType.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models.ContentType",
+      "Summary": "Represents the content type of a placeholder in a Word document."
     },
     {
       "type": "ManagedReference",
@@ -31,7 +444,39 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.Models.DocumentData.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models.DocumentData",
+      "Summary": "Represents the data for a Word document, including content placeholders and table data."
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Word.Models.ImageData.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Word.Models.ImageData.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models.ImageData",
+      "Summary": null
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/10.0.2/api/OsmoDoc.Word.Models.ImageSourceType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "10.0.2/api/OsmoDoc.Word.Models.ImageSourceType.html"
+        }
+      },
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models.ImageSourceType",
+      "Summary": null
     },
     {
       "type": "ManagedReference",
@@ -41,7 +486,11 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.Models.ParentBody.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models.ParentBody",
+      "Summary": "Represents the parent body of a placeholder in a Word document."
     },
     {
       "type": "ManagedReference",
@@ -51,7 +500,11 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.Models.TableData.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models.TableData",
+      "Summary": "Represents the data for a table in a Word document."
     },
     {
       "type": "ManagedReference",
@@ -61,7 +514,11 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.Models.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.Models",
+      "Summary": null
     },
     {
       "type": "ManagedReference",
@@ -71,7 +528,11 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.WordDocumentGenerator.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word.WordDocumentGenerator",
+      "Summary": "Provides functionality to generate Word documents based on templates and data."
     },
     {
       "type": "ManagedReference",
@@ -81,7 +542,11 @@
           "relative_path": "10.0.2/api/OsmoDoc.Word.html"
         }
       },
-      "version": ""
+      "version": "",
+      "Uid": null,
+      "IsMRef": true,
+      "Title": "OsmoDoc.Word",
+      "Summary": null
     },
     {
       "type": "Toc",
@@ -89,12 +554,14 @@
       "output": {
         ".html": {
           "relative_path": "10.0.2/api/toc.html"
+        },
+        ".json": {
+          "relative_path": "10.0.2/api/toc.json"
         }
       },
       "version": ""
     }
   ],
-  "version_info": {},
   "groups": [
     {
       "xrefmap": "xrefmap.yml"

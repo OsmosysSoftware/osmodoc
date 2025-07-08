@@ -2,13 +2,13 @@
     "metadata": [{
         "src": [{
             "files": [
-                "*.csproj"
+                "**/*.csproj"
             ],
             "exclude": ["**/bin/**", "**/obj/**"],
             "cwd": "."
         }],
         "properties": {
-            "TargetFrameworks": "net452"
+            "TargetFrameworks": "net8.0"
         },
         "dest": "obj/10.0.2/api",
         "shouldSkipMarkup": true
