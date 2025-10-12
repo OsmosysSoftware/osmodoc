@@ -355,3 +355,6 @@ MigrationBackup/
 
 # Docker mount volumes
 Temp/
+
+# Additonal Folders
+Generated/

@@ -9,6 +9,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Swashbuckle.AspNetCore.Filters;
 using OsmoDoc.Pdf;
+using OsmoDoc.Pptx;
+using OsmoDoc.Pptx.Services;
 using StackExchange.Redis;
 using OsmoDoc.API.Models;
 using OsmoDoc.Services;
@@ -37,10 +39,15 @@ if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
     );
 }
 
-// Register REDIS service
-builder.Services.AddSingleton<IConnectionMultiplexer>(
-    ConnectionMultiplexer.Connect(Environment.GetEnvironmentVariable("REDIS_URL") ?? throw new Exception("No REDIS URL specified"))
-);
+// Register Redis services (application must connect successfully at startup)
+string redisUrl = Environment.GetEnvironmentVariable("REDIS_URL")
+    ?? throw new InvalidOperationException("REDIS_URL environment variable is not configured");
+
+ConfigurationOptions redisOptions = ConfigurationOptions.Parse(redisUrl, true);
+redisOptions.AbortOnConnectFail = true; // fail fast if connection cannot be established
+
+IConnectionMultiplexer redisConnection = ConnectionMultiplexer.Connect(redisOptions);
+builder.Services.AddSingleton(redisConnection);
 builder.Services.AddScoped<IRedisTokenStoreService, RedisTokenStoreService>();
 
 // Configure request size limit (50 MB default)
@@ -60,6 +67,12 @@ builder.Services.Configure<IISServerOptions>(options =>
 
 // AutoMapper Services
 builder.Services.AddAutoMapper(typeof(Program));
+
+// PPTX generation services
+builder.Services.AddHttpClient<LlmSlideExtractorService>();
+builder.Services.AddSingleton<HtmlGeneratorService>();
+builder.Services.AddSingleton<PptxService>();
+builder.Services.AddScoped<PptxGenerator>();
 
 // Swagger UI Services
 builder.Services.AddSwaggerGen(options =>

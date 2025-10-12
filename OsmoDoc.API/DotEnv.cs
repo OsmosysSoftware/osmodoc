@@ -20,7 +20,7 @@ public static class DotEnv
 
         throw new FileNotFoundException($"{fileName} file not found");
     }
-    
+
     public static void Load(string filePath)
     {
         foreach (string line in File.ReadAllLines(filePath))
