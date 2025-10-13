@@ -1,6 +1,6 @@
 # OsmoDoc
 
-**OsmoDoc** is a powerful .NET library designed to generate PDF and Word documents dynamically using templates and structured data.
+**OsmoDoc** is a powerful .NET library designed to generate PDF, Word, and PowerPoint documents dynamically using templates and structured data.
 
 ## Key Features
 
@@ -20,6 +20,12 @@
 
 * Enables advanced templating logic with JavaScript-based syntax.
 * JSON string data is passed to the EJS template at runtime.
+
+### PPTX Presentation Generation
+
+* Turn a free-form brief (and optional images) into a PowerPoint deck using OpenAI.
+* Clone the bundled `Templates/Template.pptx` layout, or swap in your own template.
+* Enforce image upload limits and control the OpenAI model with environment variables.
 
 ---
 
@@ -54,6 +60,14 @@ npm install -g --only=prod ejs
 * Clone the repo and navigate to the root folder.
 * Create a `.env` file and copy values from `.env.example`.
 * Set your environment-specific values.
+
+### Additional Requirements for PPTX
+
+* Provide OpenAI credentials via environment variables (or a `.env` file that you load in your host):
+  * `OPENAI_API_KEY` – required.
+  * `OPENAI_MODEL` – optional, defaults to `gpt-5-mini`.
+  * `MAX_IMAGES` – optional limit for uploaded images, defaults to `5`.
+* Ensure the NuGet consumer or sample host registers `services.AddOsmoDocPptx()` and supplies an `IWebHostEnvironment` (Path defaults to your app’s content root with a `wwwroot` folder containing the PPTX template).
 
 ---
 
@@ -103,7 +117,7 @@ Refer to [prune docs](https://docs.docker.com/config/pruning/) before using.
 
 ## Usage Guide
 
-Sample usage for PDF (HTML + EJS) and Word generation is available in [`usage_guide.md`](docs/guides/usage_guide.md).
+Sample usage for PDF (HTML + EJS), Word, and PPTX generation is available in [`usage_guide.md`](docs/guides/usage_guide.md).
 
 ---
 
