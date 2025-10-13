@@ -9,12 +9,13 @@
 		<Version>1.0.0</Version>
 		<Authors>Osmosys Software Solutions</Authors>
 		<Company>Osmosys Software Solutions</Company>
-		<Description>A library for generating PDF documents from HTML and EJS templates using wkhtmltopdf.</Description>
+		<Description>A document generation library for PDF (HTML/EJS), Word, and PPTX presentations.</Description>
 		<RepositoryUrl>https://github.com/OsmosysSoftware/osmodoc</RepositoryUrl>
-		<PackageTags>pdf;html;ejs;wkhtmltopdf;document generation</PackageTags>
+		<PackageTags>pdf;word;pptx;html;ejs;wkhtmltopdf;document generation</PackageTags>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageProjectUrl>https://github.com/OsmosysSoftware/osmodoc</PackageProjectUrl>
 		<RepositoryType>git</RepositoryType>
+		<PackageReadmeFile>docs/guides/usage_guide.md</PackageReadmeFile>
     </PropertyGroup>
 
 
@@ -26,5 +27,18 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.9" />
     	<PackageReference Include="HtmlAgilityPack" Version="1.11.46" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.19" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="../docs/guides/usage_guide.md" Pack="true" PackagePath="docs/guides/usage_guide.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include="Templates/**/*">
+			<Pack>true</Pack>
+			<PackagePath>contentFiles/any/any/Templates/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+			<PackageCopyToOutput>true</PackageCopyToOutput>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
 	</ItemGroup>
 </Project>
