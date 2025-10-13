@@ -37,7 +37,10 @@ public class LlmSlideExtractorService
         this._model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-5-mini";
 
         this._http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", this._openAiKey);
-        if (!int.TryParse(config["IMAGES:MAX_IMAGES"], out this._maxImages) || this._maxImages <= 0)
+
+        string? maxImagesRaw = Environment.GetEnvironmentVariable("MAX_IMAGES");
+
+        if (!int.TryParse(maxImagesRaw, out this._maxImages) || this._maxImages <= 0)
         {
             this._maxImages = 5;
         }

@@ -113,7 +113,9 @@ public class PptxGenerator
 
     public void ConfigureFrom(IConfiguration config)
     {
-        if (int.TryParse(config["IMAGES:MAX_IMAGES"], out int v) && v > 0)
+        string? maxImagesRaw = Environment.GetEnvironmentVariable("MAX_IMAGES");
+
+        if (int.TryParse(maxImagesRaw, out int v) && v > 0)
         {
             this._maxImages = v;
         }

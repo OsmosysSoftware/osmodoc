@@ -7,7 +7,6 @@ This guide provides an overview of how to use the OsmoDoc library to generate PD
 OsmoDoc leverages `wkhtmltopdf` for PDF generation, so ensure it's installed and accessible on your system.
 
 ### Prerequisites
-
 * **.NET Core SDK:** Ensure you have the .NET Core SDK installed on your machine.
 * **wkhtmltopdf:**
     * **Windows:** Download and install `wkhtmltopdf` from their official website. You'll need to set the `OsmoDocPdfConfig.WkhtmltopdfPath` property to the executable's location.
@@ -58,7 +57,6 @@ catch (Exception ex)
    Console.WriteLine($"Error generating PDF: {ex.Message}");
 }
 ```
-
 ### Explanation
 - **OsmoDocPdfConfig.WkhtmltopdfPath**: Crucial for Windows users. Set this to the absolute path of your wkhtmltopdf.exe executable.
 - **templatePath**: The path to your HTML template file.
@@ -270,3 +268,37 @@ Explanation
 
 ### Note
 - Templates used in the above examples are available [here](docs/templates).
+
+## PPTX Presentation Generation
+OsmoDoc can also create PowerPoint presentations from a free-form brief (and optional images) using OpenAI to derive the slide structure.
+
+### Prerequisites
+* **OpenAI access:** Ensure the following environment variables are set (a `.env` file works well during development):
+    * `OPENAI_API_KEY` – required for calling the OpenAI API.
+    * `OPENAI_MODEL` – optional model override (defaults to `gpt-5-mini`).
+    * `MAX_IMAGES` – optional cap on uploaded images per request (defaults to `5`).
+* **Presentation template:** Installing the `OsmoDoc` NuGet package copies `Templates/Template.pptx` next to your app binaries. Keep that file in place (or replace it with your own template at the same relative path) so the generator can clone slide layouts.
+
+### Example Code
+```csharp
+// Register services (Program.cs / Startup.cs)
+services.AddOsmoDocPptx();
+
+// Resolve the generator and produce a deck
+PptxGenerator generator = serviceProvider.GetRequiredService<PptxGenerator>();
+
+string outputPath = await generator.GeneratePresentationFromTextAsync(
+    "Create a 5-slide presentation about sustainable packaging trends",
+    CancellationToken.None);
+
+byte[] pptxBytes = await File.ReadAllBytesAsync(outputPath);
+await File.WriteAllBytesAsync("./sustainable-packaging.pptx", pptxBytes);
+```
+
+To attach images, call `GeneratePresentationFromTextAndImagesAsync` and pass an `IEnumerable<IFormFile>` (or pre-encoded images) while respecting the `MAX_IMAGES` limit.
+
+### Explanation
+- **Service registration:** `AddOsmoDocPptx()` wires up the slide extractor, HTML renderer, PPTX compositor, and supporting `HttpClient` for you.
+- **Template location:** The default `Templates/Template.pptx` bundled with the package defines layout placeholders. Swap it post-build to apply your own branding.
+- **Environment variables:** `OPENAI_API_KEY` authenticates requests, while `OPENAI_MODEL` and `MAX_IMAGES` let you fine-tune model choice and asset limits.
+- **Output:** Each call writes a PPTX under `Generated/<requestId>/presentation-<timestamp>.pptx`. Read the file back or move it to permanent storage as needed.
