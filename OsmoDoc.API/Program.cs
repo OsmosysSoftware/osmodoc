@@ -9,8 +9,6 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Swashbuckle.AspNetCore.Filters;
 using OsmoDoc.Pdf;
-using OsmoDoc.Pptx;
-using OsmoDoc.Pptx.Services;
 using StackExchange.Redis;
 using OsmoDoc.API.Models;
 using OsmoDoc.Services;
@@ -69,10 +67,7 @@ builder.Services.Configure<IISServerOptions>(options =>
 builder.Services.AddAutoMapper(typeof(Program));
 
 // PPTX generation services
-builder.Services.AddHttpClient<LlmSlideExtractorService>();
-builder.Services.AddSingleton<HtmlGeneratorService>();
-builder.Services.AddSingleton<PptxService>();
-builder.Services.AddScoped<PptxGenerator>();
+builder.Services.AddOsmoDocPptx();
 
 // Swagger UI Services
 builder.Services.AddSwaggerGen(options =>
