@@ -313,7 +313,7 @@ public class PptxService
                 textBody.Append(
                     new A.Paragraph(
                         new A.ParagraphProperties(new A.BulletFont { Typeface = "Arial" }),
-                        new A.Run(new A.Text(li.InnerText ?? ""))
+                        new A.Run(new A.Text(HtmlEntity.DeEntitize(li.InnerText ?? "")))
                     )
                 );
             }
@@ -356,16 +356,17 @@ public class PptxService
         // Case 3: Fallback plain text (split by \n)
         foreach (string line in htmlContent.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
+            string decodedLine = HtmlEntity.DeEntitize(line);
             textBody.Append(
                 new A.Paragraph(
-                    new A.Run(new A.Text(line))
+                    new A.Run(new A.Text(decodedLine))
                 )
             );
         }
     }
 
     /// <summary>
-    /// Places an image into a picture placeholder (by placeholder name or index).
+    /// Places an image into a picture placeholder (by placeholder name or index), using CENTER CROP to avoid distortion.
     /// </summary>
     private static void FillImagePlaceholder(SlidePart slidePart, string imagePath, string placeholderName)
     {
@@ -390,6 +391,8 @@ public class PptxService
             return;
         }
 
+        (int W, int H)? imgDim = GetImageDimensions(imagePath);
+
         System.Collections.Generic.IEnumerable<Shape> shapes = slidePart.Slide.CommonSlideData.ShapeTree.Elements<P.Shape>();
 
         foreach (Shape shape in shapes)
@@ -410,22 +413,135 @@ public class PptxService
 
             if (isPicturePh || nameMatch)
             {
-                // Replace shape properties with blip fill
                 ShapeProperties? shapeProps = shape.ShapeProperties;
                 if (shapeProps == null)
                 {
                     continue;
                 }
 
+                A.BlipFill blipFill = new A.BlipFill();
+                blipFill.Blip = new A.Blip { Embed = rId };
+
+                A.SourceRectangle? srcRect = null;
+                if (imgDim != null && shapeProps.Transform2D?.Extents != null)
+                {
+                    long cx = shapeProps.Transform2D.Extents.Cx ?? 0;
+                    long cy = shapeProps.Transform2D.Extents.Cy ?? 0;
+
+                    if (cx > 0 && cy > 0)
+                    {
+                        double shapeRatio = (double)cx / cy;
+                        double imgRatio = (double)imgDim.Value.W / imgDim.Value.H;
+                        
+                        int cropL = 0, cropT = 0, cropR = 0, cropB = 0;
+                        
+                        if (imgRatio > shapeRatio) // Image is wider
+                        {
+                            double targetW = imgDim.Value.H * shapeRatio;
+                            double diff = imgDim.Value.W - targetW;
+                            double pct = diff / imgDim.Value.W;
+                            int cropVal = (int)(pct * 100000 / 2);
+                            cropL = cropVal;
+                            cropR = cropVal;
+                        }
+                        else if (imgRatio < shapeRatio) // Image is taller
+                        {
+                            double targetH = imgDim.Value.W / shapeRatio;
+                            double diff = imgDim.Value.H - targetH;
+                            double pct = diff / imgDim.Value.H;
+                            int cropVal = (int)(pct * 100000 / 2);
+                            cropT = cropVal;
+                            cropB = cropVal;
+                        }
+
+                        if (cropL > 0 || cropR > 0 || cropT > 0 || cropB > 0)
+                        {
+                            srcRect = new A.SourceRectangle
+                            {
+                                Left = cropL > 0 ? cropL : null, 
+                                Top = cropT > 0 ? cropT : null, 
+                                Right = cropR > 0 ? cropR : null, 
+                                Bottom = cropB > 0 ? cropB : null
+                            };
+                        }
+                    }
+                }
+
+                if (srcRect != null)
+                {
+                    blipFill.Append(srcRect);
+                }
+
+                blipFill.Append(new A.Stretch(new A.FillRectangle()));
+
                 shapeProps.RemoveAllChildren<A.BlipFill>();
-
-                A.BlipFill blipFill = new A.BlipFill(
-                    new A.Blip { Embed = rId },
-                    new A.Stretch(new A.FillRectangle()));
-
                 shapeProps.Append(blipFill);
                 break;
             }
         }
+    }
+
+    private static (int W, int H)? GetImageDimensions(string path)
+    {
+        try
+        {
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            using (BinaryReader br = new BinaryReader(fs))
+            {
+                byte[] header = br.ReadBytes(8);
+
+                // PNG
+                if (header.Length >= 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47)
+                {
+                    fs.Seek(8, SeekOrigin.Begin);
+                    while (fs.Position < fs.Length)
+                    {
+                        byte[] lenBytes = br.ReadBytes(4);
+                        if (BitConverter.IsLittleEndian) Array.Reverse(lenBytes);
+                        uint len = BitConverter.ToUInt32(lenBytes, 0);
+
+                        byte[] typeBytes = br.ReadBytes(4);
+                        string type = System.Text.Encoding.ASCII.GetString(typeBytes);
+
+                        if (type == "IHDR")
+                        {
+                            byte[] wBytes = br.ReadBytes(4);
+                            byte[] hBytes = br.ReadBytes(4);
+                            if (BitConverter.IsLittleEndian) { Array.Reverse(wBytes); Array.Reverse(hBytes); }
+                            return (BitConverter.ToInt32(wBytes, 0), BitConverter.ToInt32(hBytes, 0));
+                        }
+                        fs.Seek(len + 4, SeekOrigin.Current);
+                    }
+                }
+                // JPEG
+                else if (header.Length >= 2 && header[0] == 0xFF && header[1] == 0xD8)
+                {
+                    fs.Seek(2, SeekOrigin.Begin);
+                    while (fs.Position < fs.Length)
+                    {
+                        byte b = br.ReadByte();
+                        if (b != 0xFF) continue;
+                        byte marker = br.ReadByte();
+                        if (marker == 0x00 || (marker >= 0xD0 && marker <= 0xD9)) continue;
+
+                        byte[] lenBytes = br.ReadBytes(2);
+                        if (BitConverter.IsLittleEndian) Array.Reverse(lenBytes);
+                        ushort len = BitConverter.ToUInt16(lenBytes, 0);
+
+                        if (marker == 0xC0 || marker == 0xC2)
+                        {
+                            br.ReadByte();
+                            byte[] hBytes = br.ReadBytes(2);
+                            byte[] wBytes = br.ReadBytes(2);
+                            if (BitConverter.IsLittleEndian) { Array.Reverse(hBytes); Array.Reverse(wBytes); }
+                            return (BitConverter.ToUInt16(wBytes, 0), BitConverter.ToUInt16(hBytes, 0));
+                        }
+                        fs.Seek(len - 2, SeekOrigin.Current);
+                    }
+                }
+            }
+        }
+        catch { }
+        return null;
     }
 }

@@ -23,108 +23,109 @@ public class HtmlGeneratorService
         int slideNumber = 1;
         foreach (SlideData slide in slidesResult.Slides)
         {
-            string layout = slide.Layout?.ToLowerInvariant() ?? "content-slide";
-
-            // Map layout name to data-template-slide number from Template.pptx
-            string dataTemplateSlide = layout switch
+            // Determine images for this slide
+            List<string> validImages = new List<string>();
+            if (slide.Images != null && imageMap != null)
             {
-                "title-slide" => "1",
-                "content-slide" => "2",
-                "two-content-slide" => "3",
-                "thank-you-slide" => "4",
-                _ => "2" // fallback to content slide
-            };
-
-            html.AppendLine($"    <!-- Slide {slideNumber} -->");
-            html.AppendLine($"    <div class=\"slide\" data-template-slide=\"{dataTemplateSlide}\">");
-
-            // Title Slide
-            if (layout == "title-slide")
-            {
-                html.AppendLine($"        <h1>{Escape(slide.Title)}</h1>");
-                if (!string.IsNullOrWhiteSpace(slide.Subtitle))
+                foreach(string imgId in slide.Images.Distinct())
                 {
-                    html.AppendLine($"        <h3>{Escape(slide.Subtitle)}</h3>");
-                }
-
-            }
-            // Thank You Slide
-            else if (layout == "thank-you-slide")
-            {
-                html.AppendLine($"        <h1>{Escape(slide.Title)}</h1>");
-                if (!string.IsNullOrWhiteSpace(slide.Subtitle))
-                {
-                    html.AppendLine($"        <h3>{Escape(slide.Subtitle)}</h3>");
-                }
-
-            }
-            // Two Content Slide (text + optional images)
-            else if (layout == "two-content-slide")
-            {
-                html.AppendLine($"        <h1>{Escape(slide.Title)}</h1>");
-
-                if (slide.Bullets != null && slide.Bullets.Count > 0)
-                {
-                    html.AppendLine("        <ul>");
-                    foreach (string bullet in slide.Bullets)
+                    if (imageMap.ContainsKey(imgId))
                     {
-                        html.AppendLine($"            <li>{Escape(bullet)}</li>");
+                        validImages.Add(imgId);
+                    }
+                }
+            }
+            
+            // If multiple images, split into multiple slides. If 0 or 1, render once.
+            int slideIterations = (validImages.Count > 1) ? validImages.Count : 1;
+
+            for (int i = 0; i < slideIterations; i++)
+            {
+                string layout = slide.Layout?.ToLowerInvariant() ?? "content-slide";
+
+                // Map layout name to data-template-slide number from Template.pptx
+                string dataTemplateSlide = layout switch
+                {
+                    "title-slide" => "1",
+                    "content-slide" => "2",
+                    "two-content-slide" => "3",
+                    "thank-you-slide" => "4",
+                    _ => "2" // fallback to content slide
+                };
+
+                html.AppendLine($"    <!-- Slide {slideNumber} -->");
+                html.AppendLine($"    <div class=\"slide\" data-template-slide=\"{dataTemplateSlide}\">");
+
+                // Title Slide
+                if (layout == "title-slide")
+                {
+                    html.AppendLine($"        <h1>{Escape(slide.Title)}</h1>");
+                    if (!string.IsNullOrWhiteSpace(slide.Subtitle))
+                    {
+                        html.AppendLine($"        <h3>{Escape(slide.Subtitle)}</h3>");
+                    }
+                }
+                // Thank You Slide
+                else if (layout == "thank-you-slide")
+                {
+                    html.AppendLine($"        <h1>{Escape(slide.Title)}</h1>");
+                    if (!string.IsNullOrWhiteSpace(slide.Subtitle))
+                    {
+                        html.AppendLine($"        <h3>{Escape(slide.Subtitle)}</h3>");
+                    }
+                }
+                // Two Content Slide (text + optional images) or Content Slide
+                else 
+                {
+                    html.AppendLine($"        <h1>{Escape(slide.Title)}</h1>");
+                    if (!string.IsNullOrWhiteSpace(slide.Subtitle) && layout != "two-content-slide")
+                    {
+                         // Optional subtitle support for normal content slides if design allows, 
+                         // but standard logic usually puts subtitle in <p> or bullets? 
+                         // Existing code didn't handle Subtitle for two-content/content except title-slide/thank-you.
+                         // Keeping existing behavior mostly, but ensuring images are added.
                     }
 
-
-                    html.AppendLine("        </ul>");
-                }
-                else if (!string.IsNullOrWhiteSpace(slide.Content))
-                {
-                    html.AppendLine($"        <p>{Escape(slide.Content)}</p>");
-                }
-
-                if (slide.Images != null && slide.Images.Count > 0 && imageMap != null)
-                {
-                    foreach (string? imgId in slide.Images.Distinct())
+                    if (slide.Bullets != null && slide.Bullets.Count > 0)
                     {
-                        if (imageMap.TryGetValue(imgId, out string? rel))
+                        html.AppendLine("        <ul>");
+                        foreach (string bullet in slide.Bullets)
                         {
-                            html.AppendLine($"        <img data-image-id='{Escape(imgId)}' src='{Escape(rel)}' alt='{Escape(imgId)}' />");
+                            html.AppendLine($"            <li>{Escape(bullet)}</li>");
+                        }
+                        html.AppendLine("        </ul>");
+                    }
+                    else if (!string.IsNullOrWhiteSpace(slide.Content))
+                    {
+                        html.AppendLine($"        <p>{Escape(slide.Content)}</p>");
+                    }
+
+                    // Image Handling
+                    if (validImages.Count > 0 && imageMap != null)
+                    {
+                        string imgIdToRender;
+                        if (validImages.Count > 1)
+                        {
+                             // Pick the i-th image
+                             imgIdToRender = validImages[i];
+                        }
+                        else
+                        {
+                             // Pick the only image
+                             imgIdToRender = validImages[0];
+                        }
+                        
+                        if (imageMap.TryGetValue(imgIdToRender, out string? rel))
+                        {
+                             html.AppendLine($"        <img data-image-id='{Escape(imgIdToRender)}' src='{Escape(rel)}' alt='{Escape(imgIdToRender)}' />");
                         }
                     }
                 }
+
+                html.AppendLine("    </div>");
+                html.AppendLine();
+                slideNumber++;
             }
-            // Content Slide
-            else // content-slide
-            {
-                html.AppendLine($"        <h1>{Escape(slide.Title)}</h1>");
-
-                if (slide.Bullets != null && slide.Bullets.Count > 0)
-                {
-                    html.AppendLine("        <ul>");
-                    foreach (string bullet in slide.Bullets)
-                    {
-                        html.AppendLine($"            <li>{Escape(bullet)}</li>");
-                    }
-
-
-                    html.AppendLine("        </ul>");
-                }
-                else if (!string.IsNullOrWhiteSpace(slide.Content))
-                {
-                    html.AppendLine($"        <p>{Escape(slide.Content)}</p>");
-                }
-                if (slide.Images != null && slide.Images.Count > 0 && imageMap != null)
-                {
-                    foreach (string? imgId in slide.Images.Distinct())
-                    {
-                        if (imageMap.TryGetValue(imgId, out string? rel))
-                        {
-                            html.AppendLine($"        <img data-image-id='{Escape(imgId)}' src='{Escape(rel)}' alt='{Escape(imgId)}' />");
-                        }
-                    }
-                }
-            }
-
-            html.AppendLine("    </div>");
-            html.AppendLine();
-            slideNumber++;
         }
 
         html.AppendLine("</body>");

@@ -110,7 +110,7 @@ public class LlmSlideExtractorService
 
         string systemPrompt = "You are an assistant that extracts slide data from user instructions and attached images.\n" +
                 "Return ONLY valid JSON with this schema: { \"slides\": [ { \"layout\": \"title-slide|content-slide|two-content-slide|thank-you-slide\", \"title\": \"string\", \"subtitle\": \"string\", \"content\": \"string\", \"bullets\": [\"string\"], \"images\": [\"img1\", \"img2\"] } ] }\n" +
-                "Rules:\n- first slide => title-slide\n- main slides => content-slide\n- slides that pair textual explanation with a referenced image => two-content-slide\n- last slide with a thank you message => thank-you-slide\n- bullets for lists, content for paragraphs\n- only use image IDs from the provided catalog (do not invent)\n- omit images field if none used\n- Output ONLY JSON.";
+                "Rules:\n- first slide => title-slide\n- main slides => content-slide\n- slides that pair textual explanation with a referenced image => two-content-slide\n- last slide with a thank you message => thank-you-slide\n- bullets for lists, content for paragraphs\n- only use image IDs from the provided catalog (do not invent)\n- omit images field if none used\n- Keep content concise: Titles max 10 words, bullet points max 15 words, slide content max 60 words to avoid text overflow.\n- Do not use HTML entities in the output (e.g. use '&' not '&amp;').\n- SINGLE IMAGE CONSTRAINT: A slide must strictly contain AT MOST one image. If you need to discuss multiple images, generate separate slides for each image.\n- Output ONLY JSON.";
 
         object payload;
         if (images == null || images.Count == 0)
