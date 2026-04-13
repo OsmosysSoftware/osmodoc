@@ -49,31 +49,34 @@ namespace DocumentService.Pdf
             return tempHtmlFile;
         }
 
-        private static void ConvertHtmlToPdf(string toolFolderAbsolutePath, string modifiedHtmlFilePath, string outputFilePath)
+        private static void ConvertHtmlToPdf(string wkhtmltopdfExePath, string htmlFilePath, string outputPdfPath)
         {
-            string wkHtmlToPdfPath = "cmd.exe";
-            string arguments = $"/C {toolFolderAbsolutePath} \"{modifiedHtmlFilePath}\" \"{outputFilePath}\"";
+            string arguments = $"-q --enable-local-file-access \"{htmlFilePath}\" \"{outputPdfPath}\"";
 
-            ProcessStartInfo psi = new ProcessStartInfo
+            ProcessStartInfo startInfo = new ProcessStartInfo
             {
-                FileName = wkHtmlToPdfPath, 
-                Arguments = arguments, 
-                RedirectStandardOutput = true, 
-                RedirectStandardError = true, 
-                UseShellExecute = false, 
+                FileName = wkhtmltopdfExePath,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
                 CreateNoWindow = true
             };
 
             using (Process process = new Process())
             {
-                process.StartInfo = psi;
+                process.StartInfo = startInfo;
                 process.Start();
                 process.WaitForExit();
                 string output = process.StandardOutput.ReadToEnd();
-                string errors = process.StandardError.ReadToEnd();
+                string error = process.StandardError.ReadToEnd();
             }
 
-            File.Delete(modifiedHtmlFilePath);
+            // Clean up the temporary HTML file safely
+            if (File.Exists(htmlFilePath))
+            {
+                File.Delete(htmlFilePath);
+            }
         }
     }
 }
