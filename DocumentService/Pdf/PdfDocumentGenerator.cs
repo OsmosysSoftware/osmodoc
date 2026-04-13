@@ -91,7 +91,7 @@ namespace DocumentService.Pdf
             {
                 FileName = wkHtmlToPdfPath,
                 Arguments = arguments,
-                RedirectStandardOutput = true,
+                RedirectStandardOutput = false,
                 RedirectStandardError = true,
                 UseShellExecute = false,
                 CreateNoWindow = true
